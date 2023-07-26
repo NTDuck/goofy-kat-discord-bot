@@ -1,4 +1,6 @@
 
+# not to be confused with utils/
+
 from discord.ext.commands import command, Cog
 
 
@@ -15,11 +17,11 @@ class UtilityCog(Cog):
         elif limit == "*":
             limit = None
         else:
-            await ctx.reply(f"action failed: param `limit` must be a positive integer or `*`.")
+            await ctx.send(f"action failed: param `limit` must be a positive integer or `*`.")
             return
         for perm in ["manage_messages", "read_message_history"]:
             if not getattr(ctx.bot_permissions, perm):
-                await ctx.reply(f"""
+                await ctx.send(f"""
 action failed: bot does not have `{perm}` permissions.
 for authenticated users, this can be troubleshooted as follows:
 - try re-inviting the bot with said permission enabled.
@@ -27,7 +29,7 @@ for authenticated users, this can be troubleshooted as follows:
                 """)
                 return
         if not ctx.author.guild_permissions.manage_messages:
-            await ctx.reply(f"action failed: invoker `{ctx.author}` does not have `manage_messages` permissions.")
+            await ctx.send(f"action failed: invoker `{ctx.author}` does not have `manage_messages` permissions.")
             return
         await ctx.channel.delete_messages(
             messages=[msg async for msg in ctx.channel.history(limit=limit)],

@@ -9,4 +9,4 @@ class MiscCog(Cog):
 
     @command()
     async def ping(self, ctx):
-        await ctx.reply("pong!")
+        await ctx.send("pong!")

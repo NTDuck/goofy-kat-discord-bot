@@ -1,6 +1,10 @@
 
-from random import choice
-from discord.ext.commands import command, Cog
+import random
+
+from discord import File
+from discord.ext.commands import Cog, command
+
+from ..utils import random_cat
 
 
 class FunCog(Cog):
@@ -10,4 +14,11 @@ class FunCog(Cog):
 
     @command()
     async def choose(self, ctx, *args):
-        await ctx.reply(choice(args))
+        await ctx.send(random.choice(args))
+
+    @command()
+    async def cat(self, ctx):
+        await ctx.message.add_reaction(random.choice([
+            "🐱", "😿", "🙀", "😾", "😹", "😼", "😺", "😽", "😸", "😻",
+        ]))
+        await ctx.send(file=File(fp=await random_cat(), filename="cat.png", spoiler=True))

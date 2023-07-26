@@ -5,13 +5,13 @@ import os
 class Config:   # requires populating/"loading" environment variables before import
     SECRET_TOKEN = os.environ.get("TOKEN")
     MESSAGE_CONTENT = True
-    COMMAND_PREFIX = "$"
 
+    COMMAND_PREFIX = "$"
     GAME_NAME = "goofy cats"
 
 
 """cli
-pip install -U discord.py python-dotenv
+pip install -U discord.py python-dotenv aiohttp
 """
 
 """.env

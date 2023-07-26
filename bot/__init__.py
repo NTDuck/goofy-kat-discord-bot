@@ -1,5 +1,4 @@
 
-from os.path import basename, dirname
 from discord import Intents, Game
 from discord.ext.commands import Bot
 
@@ -13,6 +12,6 @@ async def create_app(config: dict) -> Bot:
 
     bot = Bot(command_prefix=config["COMMAND_PREFIX"], intents=intents, activity=activity)
     bot.config = config
-    await bot.load_extension(f"{basename(dirname(__file__))}.cogs")
+    await bot.load_extension("bot.cogs")
 
     return bot
