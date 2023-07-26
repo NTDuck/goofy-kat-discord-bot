@@ -3,10 +3,11 @@ from random import choice
 from discord.ext.commands import command, Cog
 
 
-class Fun(Cog):
-    def __init__(self, bot):
+class FunCog(Cog):
+    def __init__(self, bot, config):
         self.bot = bot
+        self.config = config
 
     @command()
     async def choose(self, ctx, *args):
-        await ctx.send(choice(args))
+        await ctx.reply(choice(args))

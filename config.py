@@ -7,6 +7,8 @@ class Config:   # requires populating/"loading" environment variables before imp
     MESSAGE_CONTENT = True
     COMMAND_PREFIX = "$"
 
+    GAME_NAME = "goofy cats"
+
 
 """cli
 pip install -U discord.py python-dotenv
@@ -24,5 +26,5 @@ TOKEN=very_secret_token_here
 """
 
 """example-invite-link
-https://discord.com/oauth2/authorize?client_id=1132630021140402209&permissions=534995528784&scope=bot
+https://discord.com/api/oauth2/authorize?client_id=1132630021140402209&permissions=401616400070&scope=bot
 """

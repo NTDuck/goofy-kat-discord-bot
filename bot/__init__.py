@@ -1,18 +1,18 @@
 
-from discord import Intents
+from os.path import basename, dirname
+from discord import Intents, Game
 from discord.ext.commands import Bot
-from .cogs import Sys, Fun
 
 
 # app factory pattern similar to flask
-async def create_app(config) -> Bot:
+async def create_app(config: dict) -> Bot:
     intents = Intents.default()
-    intents.message_content = getattr(config, "MESSAGE_CONTENT")
+    intents.message_content = config["MESSAGE_CONTENT"]
 
-    bot = Bot(command_prefix=getattr(config, "COMMAND_PREFIX"), intents=intents)
-    
-    cogs = [Sys, Fun]
-    for cog in cogs:
-        await bot.add_cog(cog(bot))
+    activity = Game(config["GAME_NAME"])
+
+    bot = Bot(command_prefix=config["COMMAND_PREFIX"], intents=intents, activity=activity)
+    bot.config = config
+    await bot.load_extension(f"{basename(dirname(__file__))}.cogs")
 
     return bot

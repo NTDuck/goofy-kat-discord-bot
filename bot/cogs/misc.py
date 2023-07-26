@@ -2,10 +2,11 @@
 from discord.ext.commands import command, Cog
 
 
-class Sys(Cog):
-    def __init__(self, bot):
+class MiscCog(Cog):
+    def __init__(self, bot, config):
         self.bot = bot
+        self.config = config
 
     @command()
     async def ping(self, ctx):
-        await ctx.send("pong!")
+        await ctx.reply("pong!")
