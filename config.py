@@ -15,9 +15,18 @@ class Config:   # requires populating/"loading" environment variables before imp
     API = {
         "https://thecatapi.com/": {   # https://developers.thecatapi.com/
             "url": "https://api.thecatapi.com/v1/images/search",
-            "headers": {"x-api-key": os.environ.get("THECATAPI_API_KEY")},
+            "headers": {"x-api-key": os.environ.get("API_KEY_THECATAPI")},
             "params": {"limit": 1},
         },
+        "https://cataas.com/": {   # https://cataas.com/doc.html
+            "url": "https://cataas.com/c",
+        },
+        # hey https://http.cat/ is actually a very good one
+        "https://shibe.online/": {
+            "url": "https://shibe.online/api/cats",   # also works with /api/shibes or /api/birds
+            "params": {"count": 1},
+        }
+        # more lookout here: https://api.publicapis.org/entries, past animals
     }
 
 
@@ -25,15 +34,8 @@ class Config:   # requires populating/"loading" environment variables before imp
 pip install -U discord.py python-dotenv
 """
 
-""".env
-TOKEN=very_secret_token_here
-"""
-
 """current-target
-- do the ping pong thing
 - play music
-- delete msg
-- send nukes
 """
 
 """example-invite-link

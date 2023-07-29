@@ -1,5 +1,6 @@
 
 import random
+import secrets
 
 from discord import File
 from discord.ext.commands import Cog, Context, command
@@ -23,10 +24,26 @@ class FunCog(Cog):
         await ctx.message.add_reaction(random.choice([
             "🐱", "😿", "🙀", "😾", "😹", "😼", "😺", "😽", "😸", "😻",
         ]))
-        cfg = self.bot.config["API"]["https://thecatapi.com/"]
-        response = await fetch(self.bot.session, url=cfg["url"], return_format="json", headers=cfg["headers"], params=cfg["params"])
-        if response is None:
-            await ctx.send("cat don't wanna.")
-            return
-        response_url = response[0]["url"]
-        await ctx.send(file=File(fp=await fetch(self.bot.session, url=response_url, return_format="bin"), filename=response_url))
+
+        cfg = self.bot.config["API"]
+        choice = random.choice(list(cfg))
+        cfg = cfg[choice]
+        
+        # disclaimer: the following block of code looks like the work of a 3-year-old. a lot of jerky if else.
+        # note-to-self: definitely needs re-implementing.
+
+        if choice == "https://cataas.com/":
+            response_url = cfg["url"]
+            filename = secrets.token_hex(4) + ".png"
+        else:
+            response = await fetch(self.bot.session, url=cfg["url"], return_format="json", headers=cfg.get("headers"), params=cfg.get("params"))
+            if response is None:
+                await ctx.send("cat don't wanna.")
+                return
+            if choice == "https://thecatapi.com/":
+                response_url = response[0]["url"]
+            elif choice == "https://shibe.online/":
+                response_url = response[0]
+            filename = secrets.token_hex(4) + "." + response_url.split(".")[-1]
+
+        await ctx.send(file=File(fp=await fetch(self.bot.session, url=response_url, return_format="bin"), filename=filename))
