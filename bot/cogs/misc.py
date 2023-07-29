@@ -1,12 +1,12 @@
 
-from discord.ext.commands import command, Cog
+from discord.ext.commands import Bot, Cog, Context, command
 
 
 class MiscCog(Cog):
-    def __init__(self, bot, config):
+    def __init__(self, bot: Bot):
         self.bot = bot
-        self.config = config
 
     @command()
-    async def ping(self, ctx):
+    async def ping(self, ctx: Context):
+        print("hey!")
         await ctx.send("pong!")

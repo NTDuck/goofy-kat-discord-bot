@@ -7,7 +7,5 @@ from bot import create_app
 from config import Config
 
 
-bot = async_run(create_app(config=Config.__dict__))
-
 if __name__ == "__main__":
-    bot.run(bot.config["SECRET_TOKEN"])
+    async_run(create_app(config=Config.__dict__))

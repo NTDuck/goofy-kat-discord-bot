@@ -1,17 +1,16 @@
 
 # not to be confused with utils/
 
-from discord.ext.commands import command, Cog
+from discord.ext.commands import command, Cog, Context
 
 
 class UtilityCog(Cog):
-    def __init__(self, bot, config):
+    def __init__(self, bot):
         self.bot = bot
-        self.config = config
 
     # should require administrative privileges
     @command()
-    async def clear(self, ctx, limit: int|str):
+    async def clear(self, ctx: Context, limit: int|str):
         if isinstance(limit, int) and limit > 0:
             limit += + 1
         elif limit == "*":
