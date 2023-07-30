@@ -8,5 +8,4 @@ class MiscCog(Cog):
 
     @command()
     async def ping(self, ctx: Context):
-        print("hey!")
         await ctx.send("pong!")

@@ -5,26 +5,32 @@ import os
 class Config:   # requires populating/"loading" environment variables before import
     SECRET_TOKEN = os.environ.get("TOKEN")
     APPLICATION_ID = os.environ.get("ID")
-    MESSAGE_CONTENT = True
-    TYPING = False
-    PRESENCES = False
+
+    INTENTS = {
+        "MESSAGE_CONTENT": True,
+        "TYPING": False,
+        "VOICE_STATES": True,
+        "PRESENCES": False,
+    }
 
     COMMAND_PREFIX = "$"
     GAME_NAME = "goofy cats"
 
     API = {
-        "https://thecatapi.com/": {   # https://developers.thecatapi.com/
-            "url": "https://api.thecatapi.com/v1/images/search",
-            "headers": {"x-api-key": os.environ.get("API_KEY_THECATAPI")},
-            "params": {"limit": 1},
-        },
-        "https://cataas.com/": {   # https://cataas.com/doc.html
-            "url": "https://cataas.com/c",
-        },
-        # hey https://http.cat/ is actually a very good one
-        "https://shibe.online/": {
-            "url": "https://shibe.online/api/cats",   # also works with /api/shibes or /api/birds
-            "params": {"count": 1},
+        "cat": {
+            "thecatapi": {   # https://developers.thecatapi.com/
+                "url": "https://api.thecatapi.com/v1/images/search",
+                "headers": {"x-api-key": os.environ.get("API_KEY_THECATAPI")},
+                "params": {"limit": 1},
+            },
+            "cataas": {   # https://cataas.com/doc.html
+                "url": "https://cataas.com/c",
+            },
+            # hey https://http.cat/ is actually a very good one
+            "shibe": {
+                "url": "https://shibe.online/api/cats",   # also works with /api/shibes or /api/birds
+                "params": {"count": 1},
+            },
         }
         # more lookout here: https://api.publicapis.org/entries, past animals
     }

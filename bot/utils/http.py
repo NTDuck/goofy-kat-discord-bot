@@ -1,14 +1,18 @@
 
 from io import BytesIO
-from aiohttp import ClientSession
+from aiohttp import ClientSession, ClientResponse
             
 
-async def fetch(session: ClientSession, url: str, return_format: str, **kwargs) -> dict | BytesIO | None:   # kwargs expect headers & query params
+async def fetch(session: ClientSession, url: str, format: str, **kwargs) -> dict | BytesIO | None:   # kwargs expect headers & query params
+
+    # children functions should take exactly 1 argument
+    async def _json(response: ClientResponse) -> dict:
+        return await response.json()
+    
+    async def _bin(response: ClientResponse) -> BytesIO:
+        return BytesIO(await response.read())
+    
     async with session.get(url, **kwargs) as response:
         if response.status != 200:
             return None
-        # please do not force me to use if else, it's ugly af
-        if return_format == "json":
-            return await response.json()
-        elif return_format == "bin":
-            return BytesIO(await response.read())
+        return await locals()[f"_{format}"](response)   # format param never depends on external dependencies there for does not need try-catch AttributeError
