@@ -37,7 +37,9 @@ class Config:   # requires populating/"loading" environment variables before imp
 
 
 """cli
-pip install -U discord.py python-dotenv
+pip install -U discord.py python-dotenv pynacl
+be sure to install ffmpeg!
+pip freeze | % {pip uninstall -y $_.split('==')[0]}
 """
 
 """current-target
