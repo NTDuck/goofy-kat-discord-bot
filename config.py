@@ -13,6 +13,17 @@ class Config:   # requires populating/"loading" environment variables before imp
         "PRESENCES": False,
     }
 
+    YT_DLP_OPTIONS = {
+        "format": "m4a/worstaudio",
+        "hls-use-mpegts": True,
+        "quiet": True,
+        "postprocessors": [{
+            "key": "FFmpegExtractAudio",
+            "preferredcodec": "m4a",
+            "preferredquality": "60",
+        }],
+    }
+
     COMMAND_PREFIX = "$"
     GAME_NAME = "goofy cats"
 
@@ -37,13 +48,13 @@ class Config:   # requires populating/"loading" environment variables before imp
 
 
 """cli
-pip install -U discord.py python-dotenv pynacl
-be sure to install ffmpeg!
+pip install -U discord.py python-dotenv pynacl yt-dlp
+be sure to install ffmpeg! just visit the official website/documentation.
 pip freeze | % {pip uninstall -y $_.split('==')[0]}
 """
 
 """current-target
-- play music
+- play music (done)
 """
 
 """example-invite-link

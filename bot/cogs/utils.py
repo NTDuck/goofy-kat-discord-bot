@@ -19,16 +19,12 @@ class UtilityCog(Cog):
             await ctx.send(f"error: param `limit` must be a positive integer or `*`.")
             return
         for perm in ["manage_messages", "read_message_history"]:
-            if not getattr(ctx.bot_permissions, perm):
-                await ctx.send(f"""
-error: bot does not have `{perm}` permissions.
-for authenticated users, this can be troubleshooted as follows:
-- try re-inviting the bot with said permission enabled.
-- try enabling the bot's said permission server-wide and channel-wide.
-                """)
-                return
-        if not ctx.author.guild_permissions.manage_messages:
-            await ctx.send(f"action failed: invoker `{ctx.author}` does not have `manage_messages` permissions.")
+            if getattr(ctx.bot_permissions, perm):
+                continue
+            await ctx.send(f"error: bot does not have `{perm}` permissions.")
+            return
+        if not ctx.channel.permissions_for(ctx.author).manage_messages:
+            await ctx.send(f"error: invoker `{ctx.author}` does not have `manage_messages` permission.")   # `kick_members` would be too extreme
             return
         await ctx.channel.delete_messages(
             messages=[msg async for msg in ctx.channel.history(limit=limit)],
@@ -37,6 +33,6 @@ for authenticated users, this can be troubleshooted as follows:
         if limit is None:
             limit = "all"
         await ctx.channel.send(
-            content=f"action complete: deleted `{limit}` messages in channel `{ctx.channel}`.",
+            content=f"success: deleted `{limit}` messages in channel `{ctx.channel.name}`.",
             delete_after=float(1),
         )

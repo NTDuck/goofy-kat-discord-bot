@@ -3,7 +3,7 @@ from io import BytesIO
 from aiohttp import ClientSession, ClientResponse
             
 
-async def fetch(session: ClientSession, url: str, format: str, **kwargs) -> dict | BytesIO | None:   # kwargs expect headers & query params
+async def fetch(session: ClientSession, url: str, format: str, **kwargs):   # kwargs expect headers & query params
 
     # children functions should take exactly 1 argument
     async def _json(response: ClientResponse) -> dict:

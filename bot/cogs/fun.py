@@ -13,7 +13,7 @@ class FunCog(Cog):
 
     @command()
     async def choose(self, ctx: Context, *args):
-        await ctx.send(random.choice(args) if args else "there's nothing to choose you idiot")
+        await ctx.send(random.choice(args) if args else "error: there's nothing to choose you idiot")
 
     @command()
     async def miku(self, ctx: Context):
@@ -31,7 +31,7 @@ class FunCog(Cog):
         async def _thecatapi(cfg: dict):
             response = await fetch(self.bot.session, url=cfg["url"], format="json", headers=cfg.get("headers"), params=cfg.get("params"))
             if response is None:
-                await ctx.send("cat don't wanna.")
+                await ctx.send("error: cat don't wanna.")
                 return
             url = response[0]["url"]
             filename = secrets.token_hex(4) + "." + url.split(".")[-1]
@@ -40,7 +40,7 @@ class FunCog(Cog):
         async def _shibe(cfg: dict):
             response = await fetch(self.bot.session, url=cfg["url"], format="json", headers=cfg.get("headers"), params=cfg.get("params"))
             if response is None:
-                await ctx.send("cat don't wanna.")
+                await ctx.send("error: cat don't wanna.")
                 return
             url = response[0]
             filename = secrets.token_hex(4) + "." + url.split(".")[-1]
@@ -50,9 +50,9 @@ class FunCog(Cog):
             "🐱", "😿", "🙀", "😾", "😹", "😼", "😺", "😽", "😸", "😻",
         ]))
 
-        cfg = self.bot.config["API"]["cat"]
+        cfg = ctx.bot.config["API"]["cat"]
         src = random.choice(list(cfg))
 
         url, filename = await locals()[f"_{src}"](cfg[src])
 
-        await ctx.send(file=File(fp=await fetch(self.bot.session, url=url, format="bin"), filename=filename))
+        await ctx.send(file=File(fp=await fetch(ctx.bot.session, url=url, format="bin"), filename=filename))
