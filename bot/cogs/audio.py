@@ -1,7 +1,11 @@
 
-from discord import FFmpegPCMAudio, VoiceClient, VoiceChannel
+from discord import FFmpegPCMAudio
+from discord.utils import get
 from discord.ext.commands import command, Bot, Cog, Context
 from yt_dlp import YoutubeDL
+
+from ..utils.fetch import fetch_ytb_audio_info
+from ..utils.formatter import status_update_prefix as sup, err_lack_perm
 
 
 class AudioCog(Cog):
@@ -11,61 +15,64 @@ class AudioCog(Cog):
     async def cog_before_invoke(self, ctx: Context) -> None:
         if ctx.bot.intents.voice_states:
             return
-        await ctx.send(f"""
-error: bot does not have `voice_states` permissions.
-for authenticated users, this can be troubleshooted as follows:
-- try re-inviting the bot with said permission enabled.
-- try enabling the bot's said permission server-wide and channel-wide.
-        """)
+        await ctx.send(err_lack_perm(ctx.bot.user.name, "voice_states"))
         raise Exception   # implement a real exception class
 
     @command()
     async def join(self, ctx: Context):
         if ctx.author.voice is None:
-            await ctx.send(f"error: invoker `{ctx.author}` is currently not in a voice channel.")
+            await ctx.send(sup(f"invoker `{ctx.author.name}` is currently not in a voice channel"))
             return
-        if ctx.voice_client.is_connected():
-            await ctx.send(f"error: bot is already connected to voice channel `{ctx.voice_client.channel.name}`.")
+        if get(ctx.bot.voice_clients, guild=ctx.guild):
+            await ctx.send(sup(f"bot `{ctx.bot.user.name}` is already connected to voice channel `{ctx.voice_client.channel.name}`"))
             return
+        # if not ctx.bot_permissions.connect:
+        #     await ctx.send(err_lack_perm(ctx.bot.user.name, "connect"))
+        #     return
         await ctx.author.voice.channel.connect()
-        await ctx.send(f"success: connected to voice channel `{ctx.author.voice.channel.name}`.")
+        await ctx.send(sup(f"bot `{ctx.bot.user.name}` connected to voice channel `{ctx.author.voice.channel.name}`", is_success=True))
 
     @command()
     async def kick(self, ctx: Context):
-        if not ctx.voice_client.is_connected():
-            await ctx.send("error: bot is not in a voice channel.")
+        if not get(ctx.bot.voice_clients, guild=ctx.guild):
+            await ctx.send(sup(f"bot `{ctx.bot.user.name}` is currently not in a voice channel"))
             return
         if not ctx.voice_client.channel.permissions_for(ctx.author).move_members:
-            await ctx.send(f"error: invoker `{ctx.author}` does not have `move_members` permission.")   # `kick_members` would be too extreme
+            await ctx.send(err_lack_perm(ctx.author.name, "move_members"))   # `kick_members` would be too extreme
             return
+        name = ctx.voice_client.channel.name
         await ctx.voice_client.disconnect()
-        await ctx.send(f"success: disconnected from voice channel `{ctx.voice_client.channel.name}`.")
+        await ctx.send(sup(f"bot `{ctx.bot.user.name}` disconnected from voice channel `{name}`", is_success=True))
 
     @command()
     async def play(self, ctx: Context, *args):
-        if not ctx.voice_client.is_connected():
-            await ctx.send("error: bot is not in a voice channel.")
+        if not args:
+            await ctx.send(sup("please provide a valid keyword"))
             return
-        # if the bot is already playing; if the bot has insufficient perms; if args is empty ...
-
-        # requires diving deep into this: https://pypi.org/project/yt-dlp/
-        ydl_opts = self.bot.config["YT_DLP_OPTIONS"]
-        with YoutubeDL(ydl_opts) as ydl_obj:
-            vid_info = ydl_obj.extract_info(f"ytsearch:{''.join(args)}", download=False)
-            # print(json.dumps(ydl_obj.sanitize_info(vid_info)))
-
-        # fetch first url from search query
-        vid_url = vid_info["entries"][0]["url"]
+        if not get(ctx.bot.voice_clients, guild=ctx.guild):
+            await ctx.send(sup(f"bot `{ctx.bot.user.name}` is currently not in a voice channel"))
+            return
+        if ctx.voice_client.is_playing():
+            await ctx.send(sup(f"bot `{ctx.bot.user.name}` is already playing in voice channel `{ctx.voice_client.channel.name}`"))
+            return
+        vid_info = fetch_ytb_audio_info(config=ctx.bot.config, search="".join(args))
+        res = vid_info["entries"][0]   # fetch first url from search query
+        vid_url = res["url"]
+        vid_name = res["title"]
+        vid_webpage_url = res["webpage_url"]
         ctx.voice_client.play(FFmpegPCMAudio(vid_url, options="-vn"))
-        await ctx.send("success: bot is playing something for ya.")
+        await ctx.send(sup(f"bot {ctx.bot.user.name} is currently playing [`{vid_name}`]({vid_webpage_url})", is_success=True))
 
     @command()
     async def stop(self, ctx: Context):
-        if not ctx.voice_client.is_connected():
-            await ctx.send("error: bot is not in a voice channel.")
+        if not get(ctx.bot.voice_clients, guild=ctx.guild):
+            await ctx.send(sup(f"bot `{ctx.bot.user.name}` is currently not in a voice channel"))
             return
-        await ctx.voice_client.stop()
-        await ctx.send(f"success: bot stop playing in voice channel `{ctx.voice_client.channel.name}`.")
+        if ctx.voice_client.is_paused():   # does not actually work
+            await ctx.send(sup(f"bot `{ctx.bot.user.name}` is currently not playing in voice channel `{ctx.voice_client.channel.name}`"))
+            return
+        ctx.voice_client.stop()
+        await ctx.send(sup(f"bot `{ctx.bot.user.name}` stopped playing in voice channel `{ctx.voice_client.channel.name}`", is_success=True))
 
 """
 this is far from complete. note-to-self: ensure perms & handle exceptions.

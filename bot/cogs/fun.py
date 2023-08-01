@@ -4,7 +4,9 @@ import secrets
 
 from discord import File
 from discord.ext.commands import Bot, Cog, Context, command
-from ..utils import fetch
+
+from ..utils.fetch import fetch
+from ..utils.formatter import status_update_prefix as sup
 
 
 class FunCog(Cog):
@@ -13,7 +15,7 @@ class FunCog(Cog):
 
     @command()
     async def choose(self, ctx: Context, *args):
-        await ctx.send(random.choice(args) if args else "error: there's nothing to choose you idiot")
+        await ctx.send(random.choice(args) if args else sup("there's nothing to choose you idiot"))
 
     @command()
     async def miku(self, ctx: Context):
@@ -31,7 +33,7 @@ class FunCog(Cog):
         async def _thecatapi(cfg: dict):
             response = await fetch(self.bot.session, url=cfg["url"], format="json", headers=cfg.get("headers"), params=cfg.get("params"))
             if response is None:
-                await ctx.send("error: cat don't wanna.")
+                await ctx.send(sup("cat don't wanna"))
                 return
             url = response[0]["url"]
             filename = secrets.token_hex(4) + "." + url.split(".")[-1]
@@ -40,7 +42,7 @@ class FunCog(Cog):
         async def _shibe(cfg: dict):
             response = await fetch(self.bot.session, url=cfg["url"], format="json", headers=cfg.get("headers"), params=cfg.get("params"))
             if response is None:
-                await ctx.send("error: cat don't wanna.")
+                await ctx.send(sup("cat don't wanna"))
                 return
             url = response[0]
             filename = secrets.token_hex(4) + "." + url.split(".")[-1]
