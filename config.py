@@ -13,10 +13,14 @@ class Config:   # requires populating/"loading" environment variables before imp
         "PRESENCES": False,
     }
 
+    # https://pypi.org/project/yt-dlp/
+    # if only this was well documented ...
     YT_DLP_OPTIONS = {
         "format": "m4a/worstaudio",
         "hls-use-mpegts": True,
         "quiet": True,
+        "extractaudio": False,
+        "source_address": "0.0.0.0",   # bind to ipv4 -> more stable?
         "postprocessors": [{
             "key": "FFmpegExtractAudio",
             "preferredcodec": "m4a",

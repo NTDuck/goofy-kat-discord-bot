@@ -24,14 +24,17 @@ class UtilityCog(Cog):
         else:
             await ctx.send(sup("param `limit` must be a positive integer or string `*`"))
             return
+        
         for perm in ["manage_messages", "read_message_history"]:
             if getattr(ctx.bot_permissions, perm):
                 continue
             await ctx.send(err_lack_perm(ctx.bot.user.name, perm))
             return
+        
         if not ctx.channel.permissions_for(ctx.author).manage_messages:
             await ctx.send(err_lack_perm(ctx.author.name, "manage_messages"))   # `kick_members` would be too extreme
             return
+        
         await ctx.channel.delete_messages(
             messages=[msg async for msg in ctx.channel.history(limit=limit)],
             reason=f"command invoked by `{ctx.author.name}`.",
