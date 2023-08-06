@@ -163,6 +163,18 @@ class AudioCog(Cog):
         msg = f"\n".join([f"currently playing: **{queue[0].name}**"] + [f"{ind}. {elem.name}" for ind, elem in enumerate(queue[1:])]) if queue else "queue is currently empty."
         await ctx.send(msg)
 
+    @command()
+    async def skip(self, ctx: Context):
+        queue = ctx.bot.g[ctx.guild.id]["voice"]["queue"]
+        ctx.voice_client.stop()
+        await ctx.send(sup(f"bot `{ctx.bot.user.name}` skipped **{queue[0].name}**", is_success=True))
+
+    @command()
+    async def clear(self, ctx: Context):
+        self.reset_queue(ctx=ctx)
+        ctx.voice_client.stop()
+        await ctx.send(sup(f"bot `{ctx.bot.user.name}` cleared current queue", is_success=True))
+
     async def cog_before_invoke(self, ctx: Context):
         if ctx.bot.intents.voice_states:
             return

@@ -11,7 +11,7 @@ class UtilityCog(Cog):
 
     # should require administrative privileges
     @command()
-    async def clear(self, ctx: Context, limit: int | str):
+    async def cls(self, ctx: Context, limit: int | str):
         max_limit = ctx.bot.config["MAX_CLEAR_LIMIT"]
         if isinstance(limit, int):
             if limit > 0:
