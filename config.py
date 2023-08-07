@@ -13,6 +13,11 @@ class Config:   # requires populating/"loading" environment variables before imp
         "PRESENCES": False,
     }
 
+    REDIS_CONFIG = {
+        "host": "localhost",
+        "port": 6379,
+    }
+
     # https://pypi.org/project/yt-dlp/
     # if only this was well documented ...
     YT_DLP_OPTIONS = {
@@ -54,9 +59,18 @@ class Config:   # requires populating/"loading" environment variables before imp
 
 
 """cli
-pip install -U discord.py python-dotenv pynacl yt-dlp
+pip install -U discord.py python-dotenv pynacl yt-dlp redis[hiredis]
 be sure to install ffmpeg! just visit the official website/documentation.
 pip freeze | % {pip uninstall -y $_.split('==')[0]}
+"""
+
+"""cli
+wsl
+redis-server   # optional
+redis-cli
+---
+redis-cli shutdown
+exit
 """
 
 """current-target

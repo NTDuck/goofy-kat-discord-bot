@@ -11,8 +11,8 @@ from ..utils.formatter import status_update_prefix as sup, err_lack_perm
 
 
 class AudioInfo:
-    def __init__(self, src: FFmpegPCMAudio, name: str, webpage_url: str):
-        self.src = src
+    def __init__(self, src_url: str, name: str, webpage_url: str):
+        self.src_url = src_url
         self.name = name
         self.webpage_url = webpage_url
 
@@ -20,12 +20,21 @@ class AudioInfo:
 class AudioCog(Cog):
     def __init__(self, bot: Bot):
         self.bot = bot
+
+    async def _get(self, ctx: Context) -> dict:
+        return await self.bot._get(id=ctx.guild.id)
     
-    def reset_queue(self, ctx: Context):
-        ctx.bot.g[ctx.guild.id]["voice"].update({
-            "state": PAUSED,
-            "queue": [],
-        })
+    async def _post(self, ctx: Context, value) -> None:
+        await self.bot._post(id=ctx.guild.id, value=value)
+
+    async def reset_queue(self, ctx: Context):
+        default_state = {
+            "voice": {
+                "state": PAUSED,
+                "queue": [],
+            }
+        }
+        await self._post(ctx, default_state)
 
     @command()
     async def join(self, ctx: Context):
@@ -42,7 +51,7 @@ class AudioCog(Cog):
         #     return
 
         # empty queue upon join
-        self.reset_queue(ctx=ctx)
+        await self.reset_queue(ctx)
 
         await ctx.author.voice.channel.connect()
         await ctx.send(sup(f"bot `{ctx.bot.user.name}` connected to voice channel `{ctx.author.voice.channel.name}`", is_success=True))
@@ -54,7 +63,7 @@ class AudioCog(Cog):
             return
         
         # empty queue upon leave
-        self.reset_queue(ctx=ctx)
+        await self.reset_queue(ctx)
         
         name = ctx.voice_client.channel.name
         await ctx.voice_client.disconnect()
@@ -62,27 +71,28 @@ class AudioCog(Cog):
         await ctx.send(sup(f"bot `{ctx.bot.user.name}` disconnected from voice channel `{name}`", is_success=True))
 
     async def play_next(self, ctx: Context, after_func):
-        v = ctx.bot.g[ctx.guild.id]["voice"]
-        state, queue = v["state"], v["queue"]
+        data = await self._get(ctx)
+        state, queue = data["voice"]["state"], data["voice"]["queue"]
+
         if state == PLAYING:
             queue.pop(0)
         if len(queue) < 1:
             await ctx.send(f"queue exhausted, bot `{ctx.bot.user.name}` stopped playing.")
-            v.update({
-                "state": PAUSED,
-            })
+            await self.reset_queue(ctx)
             return
         audio: AudioInfo = queue[0]
-        src = audio.src
+        src_url = audio.src_url
+        src = FFmpegPCMAudio(src_url, options="-vn")
         ctx.voice_client.play(PCMVolumeTransformer(src), after=after_func)
         if state == PLAYING:
-            v.update({
+            data["voice"].update({
                 "queue": queue,
             })
         else:
-            v.update({
+            data["voice"].update({
                 "state": PLAYING,
             })
+        await self._post(ctx, data)
         await ctx.send(sup(f"bot {ctx.bot.user.name} is currently [playing]({audio.webpage_url}) **{audio.name}**", is_success=True))
 
     @command()
@@ -111,67 +121,79 @@ class AudioCog(Cog):
         vid_name = res["title"]
         vid_webpage_url = res["webpage_url"]
 
-        queue = ctx.bot.g[ctx.guild.id]["voice"]["queue"]
-        src = FFmpegPCMAudio(vid_url, options="-vn")
-        queue.append(AudioInfo(src, vid_name, vid_webpage_url))
-        ctx.bot.g[ctx.guild.id]["voice"].update({
+        data = await self._get(ctx)
+        state, queue = data["voice"]["state"], data["voice"]["queue"]
+        queue.append(AudioInfo(vid_url, vid_name, vid_webpage_url))
+        data["voice"].update({
             "queue": queue,
         })
+        await self._post(ctx, data)
 
         await ctx.send(sup(f"bot {ctx.bot.user.name} added **{vid_name}** to queue", is_success=True))
 
-        if ctx.bot.g[ctx.guild.id]["voice"]["state"] == PAUSED:
+        if state == PAUSED:
             await self.play_next(ctx=ctx, after_func=after)
 
     @command()
     async def pause(self, ctx: Context):
-        if ctx.bot.g[ctx.guild.id]["voice"]["state"] == PAUSED:
+        data = await self._get(ctx)
+        state = data["voice"]["state"]
+        if state == PAUSED:
             await ctx.send(sup(f"bot `{ctx.bot.user.name}` is already paused in voice channel `{ctx.voice_client.channel.name}`"))
             return
         
         ctx.voice_client.pause()
-        ctx.bot.g[ctx.guild.id]["voice"].update({
+        data["voice"].update({
             "state": PAUSED,
         })
+        await self._post(ctx, data)
 
         await ctx.send(sup(f"bot `{ctx.bot.user.name}` paused in voice channel `{ctx.voice_client.channel.name}`", is_success=True))
 
     @command()
     async def resume(self, ctx: Context):
-        if ctx.bot.g[ctx.guild.id]["voice"]["state"] == PLAYING:
+        data = await self._get(ctx)
+        state = data["voice"]["state"]
+        if state == PLAYING:
             await ctx.send(sup(f"bot `{ctx.bot.user.name}` is already playing in voice channel `{ctx.voice_client.channel.name}`"))
             return
         
         ctx.voice_client.resume()
-        ctx.bot.g[ctx.guild.id]["voice"].update({
+        data["voice"].update({
             "state": PLAYING,
         })
+        await self._post(ctx, data)
 
         await ctx.send(sup(f"bot `{ctx.bot.user.name}` resumed in voice channel `{ctx.voice_client.channel.name}`", is_success=True))
 
     @command()
     async def vol(self, ctx: Context, volume: int):
-        if not isinstance(volume, int):
-            await ctx.send(sup("param `volume` must be a positive integer"))
+        if not all([
+            isinstance(volume, int),
+            0 <= volume <= 100,
+        ]):
+            await ctx.send(sup("param `volume` must be a suitable positive integer"))
             return
         ctx.voice_client.source.volume = volume / 100
         await ctx.send(sup(f"bot `{ctx.bot.user.name}` changed volume to `{volume}%`", is_success=True))
 
     @command()
     async def queue(self, ctx: Context):
-        queue = ctx.bot.g[ctx.guild.id]["voice"]["queue"]
+        data = await self._get(ctx)
+        queue = data["voice"]["queue"]
         msg = f"\n".join([f"currently playing: **{queue[0].name}**"] + [f"{ind}. {elem.name}" for ind, elem in enumerate(queue[1:])]) if queue else "queue is currently empty."
         await ctx.send(msg)
 
     @command()
     async def skip(self, ctx: Context):
-        queue = ctx.bot.g[ctx.guild.id]["voice"]["queue"]
+        data = await self._get(ctx)
+        queue = data["voice"]["queue"]
         ctx.voice_client.stop()
         await ctx.send(sup(f"bot `{ctx.bot.user.name}` skipped **{queue[0].name}**", is_success=True))
 
     @command()
     async def clear(self, ctx: Context):
-        self.reset_queue(ctx=ctx)
+        await self.reset_queue(ctx=ctx)
         ctx.voice_client.stop()
         await ctx.send(sup(f"bot `{ctx.bot.user.name}` cleared current queue", is_success=True))
 
