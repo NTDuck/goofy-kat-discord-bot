@@ -1,11 +1,12 @@
 
-from discord.ext.commands import Bot, Cog, Context, command
+from discord import app_commands, Client, Interaction
+from . import CustomCog
 
 
-class MiscCog(Cog):
-    def __init__(self, bot: Bot):
-        self.bot = bot
+class MiscCog(CustomCog):
+    def __init__(self, client: Client):
+        self.client = client
 
-    @command()
-    async def ping(self, ctx: Context):
-        await ctx.send("pong!")
+    @app_commands.command(description="check whether the bot's up and running.")
+    async def ping(self, interaction: Interaction):
+        await interaction.response.send_message("pong!")

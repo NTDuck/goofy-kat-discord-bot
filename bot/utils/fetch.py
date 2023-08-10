@@ -19,9 +19,9 @@ async def fetch(session: ClientSession, url: str, format: str, **kwargs):   # kw
         return await locals()[f"_{format}"](response)   # format param never depends on external dependencies there for does not need try-catch AttributeError
     
 
-def fetch_ytb_audio_info(config: dict, search: str) -> dict:
+def fetch_ytb_audio_info(config: dict, keyword: str) -> dict:
     # requires diving deep into this: https://pypi.org/project/yt-dlp/
     ydl_opts = config["YT_DLP_OPTIONS"]
     with YoutubeDL(ydl_opts) as ydl_obj:
-        vid_info = ydl_obj.extract_info(f"ytsearch:{search}", download=False)
+        vid_info = ydl_obj.extract_info(f"ytsearch:{keyword}", download=False)
     return vid_info
