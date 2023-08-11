@@ -10,10 +10,9 @@ from .const import PAUSED
 
 
 class CustomClient(Bot):
-    def __init__(self, config: dict, session: ClientSession, redis_cli: Redis, **kwargs) -> None:
+    def __init__(self, config: dict, redis_cli: Redis, **kwargs) -> None:
         super().__init__(**kwargs)
         self.config = config
-        self.session = session
         self.redis_cli = redis_cli
 
     async def _get(self, id) -> dict:
@@ -44,8 +43,11 @@ class CustomClient(Bot):
         print(f"logged in as {self.user} (id: {self.user.id})")
         print("----")
 
-    async def start(self):
-        async with (self.session, self):
+    async def start(self, session=None):
+        if session is None:
+            session = ClientSession()
+        async with (session, self):
+            self.session = session
             await super().start(token=self.config["SECRET_TOKEN"])
 
 # app factory pattern similar to flask
@@ -55,8 +57,6 @@ def create_client(config: dict):
         setattr(intents, attr.lower(), value)
 
     activity = Game(config["GAME_NAME"])
-    session = ClientSession()
-
     redis_cli = Redis(**config["REDIS_CONFIG"])   # async cli
 
     client = CustomClient(
@@ -64,7 +64,6 @@ def create_client(config: dict):
         command_prefix=config["COMMAND_PREFIX"],
         activity=activity,
         config=config,
-        session=session,
         redis_cli=redis_cli,
     )
 

@@ -12,10 +12,11 @@ class CustomCog(Cog):
 
     @staticmethod
     async def notify(interaction: Interaction):
-        await interaction.response.send_message("command processing - please wait a few seconds 😭")
+        await interaction.response.send_message("command processing, please wait a few seconds `(╯°□°)╯︵ ┻━┻`")
 
     async def cog_app_command_error(self, interaction: Interaction, error: app_commands.AppCommandError):
         # avoid full evaluation & if else
+        # but still looks pathetic anw
         # children functions takes up exactly 1 argument
         def _MissingPermissions(interaction: Interaction):
             return sup(f"user `{interaction.user.name}` does not have proper permissions")
