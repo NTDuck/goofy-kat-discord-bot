@@ -1,10 +1,11 @@
 
 import asyncio
 
-from discord import app_commands, Client, Embed, FFmpegPCMAudio, Interaction, PCMVolumeTransformer, VoiceClient, Permissions
+from discord import app_commands, Client, FFmpegPCMAudio, Interaction, PCMVolumeTransformer, VoiceClient
 
 from . import CustomCog
-from ..const import PAUSED, PLAYING
+from ..const.audio import PAUSED, PLAYING
+from ..const.command import SUCCESS
 from ..errors import VoiceClientNotFound, BotVoiceClientNotFound, BotVoiceClientAlreadyConnected, BotVoiceClientAlreadyPaused, BotVoiceClientAlreadyPlaying, BotVoiceClientQueueEmpty, KeywordNotFound
 from ..utils.fetch import fetch_ytb_audio_info
 from ..utils.formatter import status_update_prefix as sup
@@ -62,7 +63,7 @@ class AudioCog(CustomCog):
         await self.reset_queue(interaction)
 
         await interaction.user.voice.channel.connect()
-        await interaction.edit_original_response(content=sup(f"bot `{interaction.client.user.name}` connected to voice channel `{interaction.user.voice.channel.name}`", success=True))
+        await interaction.edit_original_response(content=sup(f"bot `{interaction.client.user.name}` connected to voice channel `{interaction.user.voice.channel.name}`", state=SUCCESS))
 
     @app_commands.command(description="leaves a voice channel.")
     @app_commands.checks.has_permissions(move_members=True)
@@ -78,7 +79,7 @@ class AudioCog(CustomCog):
             raise BotVoiceClientNotFound
         await voice_client.disconnect()
         # ctx.voice_client.cleanup()
-        await interaction.edit_original_response(content=sup(f"bot `{interaction.client.user.name}` disconnected from voice channel `{voice_client.channel.name}`", success=True))
+        await interaction.edit_original_response(content=sup(f"bot `{interaction.client.user.name}` disconnected from voice channel `{voice_client.channel.name}`", state=SUCCESS))
 
     async def play_next(self, interaction: Interaction, after_func):
         data = await self._get(interaction)
@@ -103,7 +104,7 @@ class AudioCog(CustomCog):
                 "state": PLAYING,
             })
         await self._post(interaction, data)
-        await interaction.channel.send(content=sup(f"bot `{interaction.client.user.name}` is playing **{audio.name}** [`(╯°□°)╯︵ ┻━┻`]({audio.webpage_url})", success=True))
+        await interaction.channel.send(content=sup(f"bot `{interaction.client.user.name}` is playing **{audio.name}** [`(╯°□°)╯︵ ┻━┻`]({audio.webpage_url})", state=SUCCESS))
 
     @app_commands.command(description="adds an audio to queue.")
     @app_commands.describe(keyword="simply what you would type into YouTube's search bar.")
@@ -139,7 +140,7 @@ class AudioCog(CustomCog):
         })
         await self._post(interaction, data)
 
-        await interaction.edit_original_response(content=sup(f"bot {interaction.client.user.name} added **{vid_name}** to queue", success=True))
+        await interaction.edit_original_response(content=sup(f"bot {interaction.client.user.name} added **{vid_name}** to queue", state=SUCCESS))
 
         if state == PAUSED:
             await self.play_next(interaction, after_func=after)
@@ -166,7 +167,7 @@ class AudioCog(CustomCog):
         })
         await self._post(interaction, data)
 
-        await interaction.edit_original_response(content=sup(f"bot `{interaction.client.user.name}` paused in voice channel `{voice_client.channel.name}`", success=True))
+        await interaction.edit_original_response(content=sup(f"bot `{interaction.client.user.name}` paused in voice channel `{voice_client.channel.name}`", state=SUCCESS))
 
     @app_commands.command(description="resumes the audio.")
     @app_commands.checks.cooldown(rate=1, per=1.0, key=lambda i: (i.guild_id, i.user.id))
@@ -189,7 +190,7 @@ class AudioCog(CustomCog):
         })
         await self._post(interaction, data)
 
-        await interaction.edit_original_response(content=sup(f"bot `{interaction.client.user.name}` resumed in voice channel `{voice_client.channel.name}`", success=True))
+        await interaction.edit_original_response(content=sup(f"bot `{interaction.client.user.name}` resumed in voice channel `{voice_client.channel.name}`", state=SUCCESS))
 
     @app_commands.command(description="changes the audio volume.")
     @app_commands.describe(value="new volume value to set.")
@@ -198,7 +199,7 @@ class AudioCog(CustomCog):
         await self.notify(interaction)
 
         self.get_bot_voice_client(interaction).source.volume = value / 100
-        await interaction.edit_original_response(content=sup(f"bot `{interaction.client.user.name}`'s volume changed to `{value}%`", success=True))
+        await interaction.edit_original_response(content=sup(f"bot `{interaction.client.user.name}`'s volume changed to `{value}%`", state=SUCCESS))
 
     @app_commands.command(description="query the current queue.")
     @app_commands.checks.cooldown(rate=1, per=1.0, key=lambda i: (i.guild_id, i.user.id))
@@ -230,7 +231,7 @@ class AudioCog(CustomCog):
             raise BotVoiceClientQueueEmpty
         
         self.get_bot_voice_client(interaction).stop()
-        await interaction.edit_original_response(content=sup(f"bot `{interaction.client.user.name}` skipped **{queue[0].name}**", success=True))
+        await interaction.edit_original_response(content=sup(f"bot `{interaction.client.user.name}` skipped **{queue[0].name}**", state=SUCCESS))
 
     @app_commands.command(description="clears the current queue.")
     @app_commands.checks.cooldown(rate=1, per=3.0, key=lambda i: (i.guild_id, i.user.id))
@@ -242,7 +243,7 @@ class AudioCog(CustomCog):
 
         await self.reset_queue(interaction)
         self.get_bot_voice_client(interaction).stop()
-        await interaction.edit_original_response(content=sup(f"bot `{interaction.client.user.name}`'s queue is cleared", success=True))
+        await interaction.edit_original_response(content=sup(f"bot `{interaction.client.user.name}`'s queue is cleared", state=SUCCESS))
 
     # async def cog_before_invoke(self, ctx: Context):
     #     if ctx.bot.intents.voice_states:

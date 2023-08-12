@@ -2,6 +2,7 @@
 from discord import app_commands, Client, Interaction
 from discord.ext.commands import Cog
 
+from ..const.command import PENDING
 from ..utils.formatter import status_update_prefix as sup
 
 
@@ -12,12 +13,12 @@ class CustomCog(Cog):
 
     @staticmethod
     async def notify(interaction: Interaction):
-        await interaction.response.send_message("command processing, please wait a few seconds `(╯°□°)╯︵ ┻━┻`")
+        await interaction.response.send_message(content=sup("command processing, please wait a few seconds `(╯°□°)╯︵ ┻━┻`", state=PENDING))
 
     async def cog_app_command_error(self, interaction: Interaction, error: app_commands.AppCommandError):
         # avoid full evaluation & if else
         # but still looks pathetic anw
-        # children functions takes up exactly 1 argument
+        # children functions take up exactly 1 argument
         def _MissingPermissions(interaction: Interaction):
             return sup(f"user `{interaction.user.name}` does not have proper permissions")
         def _BotMissingPermissions(interaction: Interaction):
@@ -39,7 +40,10 @@ class CustomCog(Cog):
         def _KeywordNotFound(interaction: Interaction):
             return sup(f"bot `{interaction.client.user.name}` could not find video matching provided keyword")
         
-        msg = locals()[f"_{error.__class__.__name__}"](interaction)
+        key = f"_{error.__class__.__name__}"
+        if key not in locals():
+            msg = sup(f"an unknown exception occurred: `{error.__class__.__name__}`")
+        msg = locals()[key](interaction)
         resp = await interaction.original_response()
         if resp is None:
             await interaction.response.send_message(content=msg)

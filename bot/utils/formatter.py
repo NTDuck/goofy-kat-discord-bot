@@ -1,4 +1,11 @@
 
-def status_update_prefix(msg: str, success=False) -> str:
-    prefix = "success" if success else "error"
-    return f"**{prefix}**: {msg}."
+from ..const.command import FAILURE, SUCCESS, PENDING
+
+
+def status_update_prefix(msg: str, state=FAILURE) -> str:
+    _d = {
+        FAILURE: "error",
+        SUCCESS: "success",
+        PENDING: "pending",
+    }
+    return f"`{_d[state]}`: {msg}."   # exception handling not required: param not dependent on user input

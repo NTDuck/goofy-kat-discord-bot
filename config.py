@@ -74,7 +74,9 @@ exit
 """
 
 """current-target
-- play music (done)
+- set up logging
+- help command
+- server stats thingy
 """
 
 """example-invite-link

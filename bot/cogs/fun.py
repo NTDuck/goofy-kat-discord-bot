@@ -5,6 +5,7 @@ import secrets
 from discord import app_commands, Client, File, Interaction
 
 from . import CustomCog
+from ..const.command import SUCCESS
 from ..utils.fetch import fetch
 from ..utils.formatter import status_update_prefix as sup
 
@@ -54,4 +55,7 @@ class FunCog(CustomCog):
         src = random.choice(list(cfg))
         url, filename = await locals()[f"_{src}"](cfg[src])
 
-        await interaction.edit_original_response(attachments=[File(fp=await fetch(interaction.client.session, url=url, format="bin"), filename=filename)])
+        await interaction.edit_original_response(
+            content=sup(f"bot `{interaction.client.user.name}` sent a cat", state=SUCCESS),
+            attachments=[File(fp=await fetch(interaction.client.session, url=url, format="bin"), filename=filename)]
+        )

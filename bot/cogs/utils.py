@@ -4,6 +4,7 @@ import asyncio
 from discord import app_commands, Client, Interaction
 
 from . import CustomCog
+from ..const.command import SUCCESS
 from ..utils.formatter import status_update_prefix as sup
 
 
@@ -25,6 +26,6 @@ class UtilityCog(CustomCog):
         
         await interaction.channel.purge(limit=limit, check=lambda m: m.id != resp.id, bulk=True)
 
-        await interaction.edit_original_response(content=sup(f"deleted up to `{number}` messages in channel `{interaction.channel.name}`", success=True))
+        await interaction.edit_original_response(content=sup(f"deleted up to `{number}` messages in channel `{interaction.channel.name}`", state=SUCCESS))
         await asyncio.sleep(2)
         await interaction.delete_original_response()
