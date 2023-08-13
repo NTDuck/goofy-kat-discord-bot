@@ -1,43 +1,44 @@
 
-from discord import app_commands, Client, Interaction
-from discord.ext.commands import Cog
+import discord
+from discord import app_commands
+from discord.ext import commands
 
 from ..const.command import PENDING
 from ..utils.formatter import status_update_prefix as sup
 
 
-class CustomCog(Cog):
-    def __init__(self, client: Client) -> None:
+class CustomCog(commands.Cog):
+    def __init__(self, client: discord.Client) -> None:
         super().__init__()
         self.client = client
 
     @staticmethod
-    async def notify(interaction: Interaction):
+    async def notify(interaction: discord.Interaction):
         await interaction.response.send_message(content=sup("command processing, please wait a few seconds `(╯°□°)╯︵ ┻━┻`", state=PENDING))
 
-    async def cog_app_command_error(self, interaction: Interaction, error: app_commands.AppCommandError):
+    async def cog_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         # avoid full evaluation & if else
         # but still looks pathetic anw
         # children functions take up exactly 1 argument
-        def _MissingPermissions(interaction: Interaction):
+        def _MissingPermissions(interaction: discord.Interaction) -> str:
             return sup(f"user `{interaction.user.name}` does not have proper permissions")
-        def _BotMissingPermissions(interaction: Interaction):
+        def _BotMissingPermissions(interaction: discord.Interaction) -> str:
             return sup(f"bot `{interaction.client.user.name}` does not have proper permissions")
-        def _CommandOnCooldown(interaction: Interaction):
+        def _CommandOnCooldown(interaction: discord.Interaction) -> str:
             return sup(f"bot `{interaction.client.user.name}` is on cooldown")
-        def _VoiceClientNotFound(interaction: Interaction):
+        def _VoiceClientNotFound(interaction: discord.Interaction) -> str:
             return sup(f"user `{interaction.user.name}` is not in a voice channel")
-        def _BotVoiceClientNotFound(interaction: Interaction):
+        def _BotVoiceClientNotFound(interaction: discord.Interaction) -> str:
             return sup(f"bot `{interaction.client.user.name}` is not in a voice channel")
-        def _BotVoiceClientAlreadyConnected(interaction: Interaction):
+        def _BotVoiceClientAlreadyConnected(interaction: discord.Interaction) -> str:
             return sup(f"bot `{interaction.client.user.name}` is already connected to voice channel `{self.get_bot_voice_client(interaction).channel.name}`")
-        def _BotVoiceClientAlreadyPaused(interaction: Interaction):
+        def _BotVoiceClientAlreadyPaused(interaction: discord.Interaction) -> str:
             return sup(f"bot `{interaction.client.user.name}` is already paused in voice channel `{self.get_bot_voice_client(interaction).channel.name}`")
-        def _BotVoiceClientAlreadyPlaying(interaction: Interaction):
+        def _BotVoiceClientAlreadyPlaying(interaction: discord.Interaction) -> str:
             return sup(f"bot `{interaction.client.user.name}` is already playing in voice channel `{self.get_bot_voice_client(interaction).channel.name}`")
-        def _BotVoiceClientQueueEmpty(interaction: Interaction):
+        def _BotVoiceClientQueueEmpty(interaction: discord.Interaction) -> str:
             return sup(f"bot `{interaction.client.user.name}`'s queue is empty")
-        def _KeywordNotFound(interaction: Interaction):
+        def _KeywordNotFound(interaction: discord.Interaction) -> str:
             return sup(f"bot `{interaction.client.user.name}` could not find video matching provided keyword")
         
         key = f"_{error.__class__.__name__}"
@@ -57,7 +58,7 @@ from .misc import MiscCog
 from .utils import UtilityCog
 
 
-async def setup(client):   # register as ext
+async def setup(client: discord.Client):   # register as ext
     cogs = {AudioCog, FunCog, MiscCog, UtilityCog}
     for cog in cogs:
         await client.add_cog(cog(client))

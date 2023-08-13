@@ -1,17 +1,20 @@
 
 import asyncio
+from collections.abc import Mapping
+from typing import Callable
 
-from discord import app_commands, Client, FFmpegPCMAudio, Interaction, PCMVolumeTransformer, VoiceClient
+import discord
+from discord import app_commands
 
 from . import CustomCog
 from ..const.audio import PAUSED, PLAYING
 from ..const.command import SUCCESS
-from ..errors import VoiceClientNotFound, BotVoiceClientNotFound, BotVoiceClientAlreadyConnected, BotVoiceClientAlreadyPaused, BotVoiceClientAlreadyPlaying, BotVoiceClientQueueEmpty, KeywordNotFound
+from ..errors import *
 from ..utils.fetch import fetch_ytb_audio_info
 from ..utils.formatter import status_update_prefix as sup
 
 
-class AudioInfo:   # pickle serializable
+class AudioData:   # pickle serializable
     def __init__(self, src_url: str, name: str, webpage_url: str):
         self.src_url = src_url
         self.name = name
@@ -19,16 +22,16 @@ class AudioInfo:   # pickle serializable
 
 
 class AudioCog(CustomCog):
-    def __init__(self, client: Client):
+    def __init__(self, client: discord.Client):
         self.client = client
 
-    async def _get(self, interaction: Interaction) -> dict:
+    async def _get(self, interaction: discord.Interaction) -> Mapping:
         return await interaction.client._get(id=interaction.guild_id)
     
-    async def _post(self, interaction: Interaction, value: dict) -> None:
+    async def _post(self, interaction: discord.Interaction, value: Mapping) -> None:
         await interaction.client._post(id=interaction.guild_id, value=value)
 
-    async def reset_queue(self, interaction: Interaction) -> None:
+    async def reset_queue(self, interaction: discord.Interaction) -> None:
         default_state = {
             "voice": {
                 "state": PAUSED,
@@ -37,18 +40,13 @@ class AudioCog(CustomCog):
         }
         await self._post(interaction, default_state)
 
-    # @kick.before_invoke
-    # @play.before_invoke
-    # @pause.before_invoke
-    # @resume.before_invoke
-    # @vol.before_invoke
-    def get_bot_voice_client(self, interaction: Interaction) -> VoiceClient:
+    def get_bot_voice_client(self, interaction: discord.Interaction) -> discord.VoiceClient:
         return interaction.client.get_guild(interaction.guild_id).voice_client
 
     @app_commands.command(description="joins a voice channel.")
     @app_commands.checks.cooldown(rate=1, per=1.0, key=lambda i: (i.guild_id, i.user.id))
     @app_commands.checks.bot_has_permissions(connect=True)
-    async def join(self, interaction: Interaction):
+    async def join(self, interaction: discord.Interaction):
         await self.notify(interaction)
 
         voice_state = interaction.user.voice
@@ -68,7 +66,7 @@ class AudioCog(CustomCog):
     @app_commands.command(description="leaves a voice channel.")
     @app_commands.checks.has_permissions(move_members=True)
     @app_commands.checks.cooldown(rate=1, per=1.0, key=lambda i: (i.guild_id, i.user.id))
-    async def leave(self, interaction: Interaction):
+    async def leave(self, interaction: discord.Interaction):
         await self.notify(interaction)
 
         # empty queue upon leave
@@ -81,7 +79,7 @@ class AudioCog(CustomCog):
         # ctx.voice_client.cleanup()
         await interaction.edit_original_response(content=sup(f"bot `{interaction.client.user.name}` disconnected from voice channel `{voice_client.channel.name}`", state=SUCCESS))
 
-    async def play_next(self, interaction: Interaction, after_func):
+    async def play_next(self, interaction: discord.Interaction, after_func: Callable):
         data = await self._get(interaction)
         state, queue = data["voice"]["state"], data["voice"]["queue"]
 
@@ -91,10 +89,10 @@ class AudioCog(CustomCog):
             await interaction.channel.send(content=f"queue exhausted. bot `{interaction.client.user.name}` stopped playing.")
             await self.reset_queue(interaction)
             return
-        audio: AudioInfo = queue[0]
+        audio: AudioData = queue[0]
         src_url = audio.src_url
-        src = FFmpegPCMAudio(src_url, options="-vn")
-        self.get_bot_voice_client(interaction).play(PCMVolumeTransformer(src), after=after_func)
+        src = discord.FFmpegPCMAudio(src_url, options="-vn")
+        self.get_bot_voice_client(interaction).play(discord.PCMVolumeTransformer(src), after=after_func)
         if state == PLAYING:
             data["voice"].update({
                 "queue": queue,
@@ -109,7 +107,7 @@ class AudioCog(CustomCog):
     @app_commands.command(description="adds an audio to queue.")
     @app_commands.describe(keyword="simply what you would type into YouTube's search bar.")
     @app_commands.checks.cooldown(rate=1, per=1.0, key=lambda i: (i.guild_id, i.user.id))
-    async def play(self, interaction: Interaction, keyword: app_commands.Range[str, 1, None]):
+    async def play(self, interaction: discord.Interaction, keyword: app_commands.Range[str, 1, None]):
         def after(error=None):
             if error:
                 print(error)
@@ -134,7 +132,7 @@ class AudioCog(CustomCog):
 
         data = await self._get(interaction)
         state, queue = data["voice"]["state"], data["voice"]["queue"]
-        queue.append(AudioInfo(vid_url, vid_name, vid_webpage_url))
+        queue.append(AudioData(vid_url, vid_name, vid_webpage_url))
         data["voice"].update({
             "queue": queue,
         })
@@ -147,7 +145,7 @@ class AudioCog(CustomCog):
 
     @app_commands.command(description="pauses the audio.")
     @app_commands.checks.cooldown(rate=1, per=1.0, key=lambda i: (i.guild_id, i.user.id))
-    async def pause(self, interaction: Interaction):
+    async def pause(self, interaction: discord.Interaction):
         await self.notify(interaction)
         
         data = await self._get(interaction)
@@ -171,7 +169,7 @@ class AudioCog(CustomCog):
 
     @app_commands.command(description="resumes the audio.")
     @app_commands.checks.cooldown(rate=1, per=1.0, key=lambda i: (i.guild_id, i.user.id))
-    async def resume(self, interaction: Interaction):
+    async def resume(self, interaction: discord.Interaction):
         await self.notify(interaction)
 
         data = await self._get(interaction)
@@ -195,7 +193,7 @@ class AudioCog(CustomCog):
     @app_commands.command(description="changes the audio volume.")
     @app_commands.describe(value="new volume value to set.")
     @app_commands.checks.cooldown(rate=1, per=1.0, key=lambda i: (i.guild_id, i.user.id))
-    async def volume(self, interaction: Interaction, value: app_commands.Range[int, 0, 100]):
+    async def volume(self, interaction: discord.Interaction, value: app_commands.Range[int, 0, 100]):
         await self.notify(interaction)
 
         self.get_bot_voice_client(interaction).source.volume = value / 100
@@ -203,7 +201,7 @@ class AudioCog(CustomCog):
 
     @app_commands.command(description="query the current queue.")
     @app_commands.checks.cooldown(rate=1, per=1.0, key=lambda i: (i.guild_id, i.user.id))
-    async def queue(self, interaction: Interaction):
+    async def queue(self, interaction: discord.Interaction):
         await self.notify(interaction)
 
         if self.get_bot_voice_client(interaction) is None:
@@ -219,7 +217,7 @@ class AudioCog(CustomCog):
 
     @app_commands.command(description="skips the current audio in queue.")
     @app_commands.checks.cooldown(rate=1, per=1.0, key=lambda i: (i.guild_id, i.user.id))
-    async def skip(self, interaction: Interaction):
+    async def skip(self, interaction: discord.Interaction):
         await self.notify(interaction)
     
         if self.get_bot_voice_client(interaction) is None:
@@ -235,7 +233,7 @@ class AudioCog(CustomCog):
 
     @app_commands.command(description="clears the current queue.")
     @app_commands.checks.cooldown(rate=1, per=3.0, key=lambda i: (i.guild_id, i.user.id))
-    async def clear(self, interaction: Interaction):
+    async def clear(self, interaction: discord.Interaction):
         await self.notify(interaction)
 
         if self.get_bot_voice_client(interaction) is None:
