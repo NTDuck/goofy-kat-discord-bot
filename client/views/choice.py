@@ -32,9 +32,11 @@ class ChoiceView(discord.ui.View):
 
 # practical uses
 class MikuView(ChoiceView):
-    _children = [
-        ChoiceButton(value=0, style=discord.ButtonStyle.danger, label="no"),
-        ChoiceButton(value=1, style=discord.ButtonStyle.success, label="yes"),
-    ]
+    NO = 0
+    YES = 1
     def __init__(self, timeout: float | None = 180):
-        super().__init__(_children=self._children, timeout=timeout)
+        _children = [
+            ChoiceButton(value=0, style=discord.ButtonStyle.danger, label="no"),
+            ChoiceButton(value=1, style=discord.ButtonStyle.success, label="yes"),
+        ]
+        super().__init__(_children=_children, timeout=timeout)

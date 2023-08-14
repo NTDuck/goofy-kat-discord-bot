@@ -10,7 +10,7 @@ from . import CustomCog
 from ..const.command import SUCCESS
 from ..const.fetch import JSON, BINARY
 from ..utils.fetch import fetch
-from ..utils.formatter import status_update_prefix as sup
+from ..utils.formatter import status_update_prefix as sup, incremental_response
 from ..views.choice import MikuView
 
 
@@ -66,15 +66,17 @@ class FunCog(CustomCog):
         view = MikuView()
         await interaction.response.send_message(content="excuse me? are you british?", view=view)
         await view.wait()
-        value = view.value
         _d = {
-            0: "kys",
-            1: "oh no. oh no no no no no. hatsune miku does not talk to british people. the only pounds i need are me pounding your mom. se ka~",
-            None: "kys",
+            view.NO: "kiss your homie",
+            view.YES: "oh no. oh no no no no no. hatsune miku does not talk to british people. the only pounds i need are me pounding your mom. se ka~",
+            None: "kiss your sister",
         }
-        await interaction.edit_original_response(content=_d[value])
+        await incremental_response(interaction, msg=_d[view.value])
             
 
     # gtn
     # rps
-    # ttt
+    @app_commands.command(description="play some tic-tac-toe.")
+    @app_commands.checks.cooldown(rate=1, per=3.0, key=lambda i: (i.guild_id, i.user.id))
+    async def tictactoe(self, interaction: discord.Interaction):
+        ...
