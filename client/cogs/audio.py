@@ -108,10 +108,7 @@ class AudioCog(CustomCog):
     @app_commands.describe(keyword="simply what you would type into YouTube's search bar.")
     @app_commands.checks.cooldown(rate=1, per=1.0, key=lambda i: (i.guild_id, i.user.id))
     async def play(self, interaction: discord.Interaction, keyword: app_commands.Range[str, 1, None]):
-        def after(error=None):
-            if error:
-                print(error)
-                return
+        def after():
             coro = self.play_next(interaction, after_func=after)
             future = asyncio.run_coroutine_threadsafe(coro, interaction.client.loop)
             future.result()   # must be called to get result from future
@@ -150,14 +147,13 @@ class AudioCog(CustomCog):
         
         data = await self._get(interaction)
         state, queue = data["voice"]["state"], data["voice"]["queue"]
-        if state == PAUSED:
-            raise BotVoiceClientAlreadyPaused
-        if not queue:
-            raise BotVoiceClientQueueEmpty
-        
         voice_client = self.get_bot_voice_client(interaction)
         if voice_client is None:
             raise BotVoiceClientNotFound
+        if not queue:
+            raise BotVoiceClientQueueEmpty
+        if state == PAUSED:
+            raise BotVoiceClientAlreadyPaused
         
         voice_client.pause()
         data["voice"].update({
@@ -174,14 +170,14 @@ class AudioCog(CustomCog):
 
         data = await self._get(interaction)
         state, queue = data["voice"]["state"], data["voice"]["queue"]
-        if state == PLAYING:
-            raise BotVoiceClientAlreadyPlaying
-        if not queue:
-            raise BotVoiceClientQueueEmpty
-        
         voice_client = self.get_bot_voice_client(interaction)
         if voice_client is None:
             raise BotVoiceClientNotFound
+        if not queue:
+            raise BotVoiceClientQueueEmpty
+        if state == PLAYING:
+            raise BotVoiceClientAlreadyPlaying
+        
         voice_client.resume()
         data["voice"].update({
             "state": PLAYING,
@@ -195,6 +191,9 @@ class AudioCog(CustomCog):
     @app_commands.checks.cooldown(rate=1, per=1.0, key=lambda i: (i.guild_id, i.user.id))
     async def volume(self, interaction: discord.Interaction, value: app_commands.Range[int, 0, 100]):
         await self.notify(interaction)
+
+        if self.get_bot_voice_client(interaction) is None:
+            raise BotVoiceClientNotFound
 
         self.get_bot_voice_client(interaction).source.volume = value / 100
         await interaction.edit_original_response(content=sup(f"bot `{interaction.client.user.name}`'s volume changed to `{value}%`", state=SUCCESS))

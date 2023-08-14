@@ -11,6 +11,7 @@ from ..const.command import SUCCESS
 from ..const.fetch import JSON, BINARY
 from ..utils.fetch import fetch
 from ..utils.formatter import status_update_prefix as sup
+from ..views.choice import MikuView
 
 
 class FunCog(CustomCog):
@@ -58,3 +59,22 @@ class FunCog(CustomCog):
             content=sup(f"bot `{interaction.client.user.name}` sent a cat", state=SUCCESS),
             attachments=[discord.File(fp=await fetch(interaction.client.session, url=url, format=BINARY), filename=filename)]
         )
+
+    @app_commands.command(description="seek audience with the vocaloid anthropomorphism.")
+    @app_commands.checks.cooldown(rate=1, per=3.0, key=lambda i: (i.guild_id, i.user.id))
+    async def miku(self, interaction: discord.Interaction):
+        view = MikuView()
+        await interaction.response.send_message(content="excuse me? are you british?", view=view)
+        await view.wait()
+        value = view.value
+        _d = {
+            0: "kys",
+            1: "oh no. oh no no no no no. hatsune miku does not talk to british people. the only pounds i need are me pounding your mom. se ka~",
+            None: "kys",
+        }
+        await interaction.edit_original_response(content=_d[value])
+            
+
+    # gtn
+    # rps
+    # ttt
