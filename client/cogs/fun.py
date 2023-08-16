@@ -12,6 +12,7 @@ from ..const.fetch import JSON, BINARY
 from ..utils.fetch import fetch
 from ..utils.formatter import status_update_prefix as sup, incremental_response
 from ..views.choice import MikuView
+from ..views.tictactoe import TicTacToeView
 
 
 class FunCog(CustomCog):
@@ -77,6 +78,7 @@ class FunCog(CustomCog):
     # gtn
     # rps
     @app_commands.command(description="play some tic-tac-toe.")
+    @app_commands.describe(size="the grid size")
     @app_commands.checks.cooldown(rate=1, per=3.0, key=lambda i: (i.guild_id, i.user.id))
-    async def tictactoe(self, interaction: discord.Interaction):
-        ...
+    async def tictactoe(self, interaction: discord.Interaction, size: app_commands.Range[int, 3, 5]):
+        await interaction.response.send_message(content="play a game of tic-tac-toe.", view=TicTacToeView(size=(size, size)))

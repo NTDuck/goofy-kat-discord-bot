@@ -17,7 +17,7 @@ class ChoiceButton(discord.ui.Button["ChoiceView"]):
         
 
 class ChoiceView(discord.ui.View):
-    children: Iterable[discord.ui.Button]
+    children: Iterable[ChoiceButton]
     def __init__(self, _children: Iterable[ChoiceButton], timeout: Optional[float] = 180):
         super().__init__(timeout=timeout)
         self.value = None
