@@ -73,12 +73,11 @@ class FunCog(CustomCog):
             None: "kiss your sister",
         }
         await incremental_response(interaction, msg=_d[view.value])
-            
 
     # gtn
     # rps
-    @app_commands.command(description="play some tic-tac-toe.")
-    @app_commands.describe(size="the grid size")
+    @app_commands.command(description="play some tic-tac-toe with the bot.")
+    @app_commands.describe(size="the size of the board")
     @app_commands.checks.cooldown(rate=1, per=3.0, key=lambda i: (i.guild_id, i.user.id))
     async def tictactoe(self, interaction: discord.Interaction, size: app_commands.Range[int, 3, 5]):
-        await interaction.response.send_message(content="play a game of tic-tac-toe.", view=TicTacToeView(size=(size, size)))
+        await interaction.response.send_message(content="play a game of tic-tac-toe.", view=TicTacToeView(user=interaction.user, size=(size, size)))
