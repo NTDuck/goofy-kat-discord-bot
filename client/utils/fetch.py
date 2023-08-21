@@ -1,4 +1,6 @@
 
+import os
+import random
 from collections.abc import Mapping
 from typing import Union
 
@@ -7,6 +9,11 @@ from aiohttp import ClientSession, ClientResponse
 from yt_dlp import YoutubeDL
 
 from ..const.fetch import JSON, BINARY
+
+
+def random_local_asset(*dirs, basedir=["client", "assets"]):   # might raise OSError if path fails
+    dir = os.path.join(*basedir, *dirs)
+    return os.path.join(*basedir, *dirs, random.choice(os.listdir(dir)))
             
 
 async def fetch(session: ClientSession, url: str, format: int, **kwargs):   # kwargs expect headers & query params

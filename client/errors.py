@@ -3,6 +3,9 @@
 from discord import app_commands
 
 
+class Unauthorized(app_commands.CheckFailure):
+    pass
+
 class VoiceClientNotFound(app_commands.CheckFailure):
     pass
 
@@ -16,6 +19,9 @@ class BotVoiceClientAlreadyPaused(app_commands.CheckFailure):
     pass
 
 class BotVoiceClientAlreadyPlaying(app_commands.CheckFailure):
+    pass
+
+class BotVoiceClientIsolation(app_commands.CheckFailure):
     pass
 
 class BotVoiceClientQueueEmpty(app_commands.CheckFailure):

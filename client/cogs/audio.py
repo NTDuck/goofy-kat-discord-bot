@@ -1,16 +1,17 @@
 
 import asyncio
 from collections.abc import Mapping
+from io import BytesIO
 from typing import Callable
 
 import discord
 from discord import app_commands
 
 from . import CustomCog
-from ..const.audio import PAUSED, PLAYING
+from ..const.audio import PAUSED, PLAYING, ISOLATED
 from ..const.command import SUCCESS
 from ..errors import *
-from ..utils.fetch import fetch_ytb_audio_info
+from ..utils.fetch import fetch_ytb_audio_info, random_local_asset
 from ..utils.formatter import status_update_prefix as sup
 
 
@@ -75,6 +76,12 @@ class AudioCog(CustomCog):
         voice_client = self.get_bot_voice_client(interaction)
         if voice_client is None:
             raise BotVoiceClientNotFound
+        
+        data = await self._get(interaction)
+        state = data["voice"]["state"]
+        if state == ISOLATED:
+            raise BotVoiceClientIsolation
+        
         await voice_client.disconnect()
         # ctx.voice_client.cleanup()
         await interaction.edit_original_response(content=sup(f"bot `{interaction.client.user.name}` disconnected from voice channel `{voice_client.channel.name}`", state=SUCCESS))
@@ -117,8 +124,13 @@ class AudioCog(CustomCog):
 
         if self.get_bot_voice_client(interaction) is None:
             raise VoiceClientNotFound
+        
+        data = await self._get(interaction)
+        state, queue = data["voice"]["state"], data["voice"]["queue"]
+        if state == ISOLATED:
+            raise BotVoiceClientIsolation
+        
         vid_info = fetch_ytb_audio_info(config=interaction.client.config, keyword=keyword)
-
         if not vid_info["entries"]:
             raise KeywordNotFound
                 
@@ -127,8 +139,6 @@ class AudioCog(CustomCog):
         vid_name = res["title"]
         vid_webpage_url = res["webpage_url"]
 
-        data = await self._get(interaction)
-        state, queue = data["voice"]["state"], data["voice"]["queue"]
         queue.append(AudioData(vid_url, vid_name, vid_webpage_url))
         data["voice"].update({
             "queue": queue,
@@ -140,6 +150,53 @@ class AudioCog(CustomCog):
         if state == PAUSED:
             await self.play_next(interaction, after_func=after)
 
+    """
+    a special command only accessible through a selected few.
+    when called, immediately terminates the queue (if any) and switches to ISOLATED state; then play desired audio 24/7.
+    only stops when forced kick.
+    """
+
+    async def iso_play_next(self, interaction: discord.Interaction, after_func: Callable):
+        data = await self._get(interaction)
+        state = data["voice"]["state"]
+
+        if state != ISOLATED:
+            file = random_local_asset("audio", "__secret__")
+            src = discord.FFmpegPCMAudio(file)
+            self.get_bot_voice_client(interaction).play(discord.PCMVolumeTransformer(src), after=after_func)
+
+            data["voice"].update({
+                "state": ISOLATED,   # force switch state
+                "queue": [],
+            })
+            await self._post(interaction, data)
+            await interaction.channel.send(content=sup(f"bot `{interaction.client.user.name}` entered `isolation`", state=SUCCESS))
+        
+        else:
+            data["voice"].update({
+                "state": PAUSED,
+            })
+            await self._post(interaction, data)
+            await interaction.channel.send(content=sup(f"bot `{interaction.client.user.name}` is back to normal", state=SUCCESS))
+
+    @app_commands.command(description="adds a special audio to the queue. requires above-admin privileges.")
+    async def isoplay(self, interaction: discord.Interaction):
+        def after():
+            coro = self.play_next(interaction, after_func=after)
+            future = asyncio.run_coroutine_threadsafe(coro, interaction.client.loop)
+            future.result()
+        
+        await self.notify(interaction)
+        if interaction.user.id != interaction.client.config["UID"]:
+            raise Unauthorized
+        if self.get_bot_voice_client(interaction) is None:
+            raise VoiceClientNotFound
+        
+        await self.reset_queue(interaction)
+        self.get_bot_voice_client(interaction).stop()
+
+        await self.iso_play_next(interaction, after_func=after)
+
     @app_commands.command(description="pauses the audio.")
     @app_commands.checks.cooldown(rate=1, per=1.0, key=lambda i: (i.guild_id, i.user.id))
     async def pause(self, interaction: discord.Interaction):
@@ -150,6 +207,8 @@ class AudioCog(CustomCog):
         voice_client = self.get_bot_voice_client(interaction)
         if voice_client is None:
             raise BotVoiceClientNotFound
+        if state == ISOLATED:
+            raise BotVoiceClientIsolation
         if not queue:
             raise BotVoiceClientQueueEmpty
         if state == PAUSED:
@@ -173,6 +232,8 @@ class AudioCog(CustomCog):
         voice_client = self.get_bot_voice_client(interaction)
         if voice_client is None:
             raise BotVoiceClientNotFound
+        if state == ISOLATED:
+            raise BotVoiceClientIsolation
         if not queue:
             raise BotVoiceClientQueueEmpty
         if state == PLAYING:
@@ -223,7 +284,9 @@ class AudioCog(CustomCog):
             raise BotVoiceClientNotFound
 
         data = await self._get(interaction)
-        queue = data["voice"]["queue"]
+        queue, state = data["voice"]["queue"], data["voice"]["state"]
+        if state == ISOLATED:
+            raise BotVoiceClientIsolation
         if not queue:
             raise BotVoiceClientQueueEmpty
         
@@ -237,6 +300,11 @@ class AudioCog(CustomCog):
 
         if self.get_bot_voice_client(interaction) is None:
             raise BotVoiceClientNotFound
+        
+        data = await self._get(interaction)
+        state = data["voice"]["state"]
+        if state == ISOLATED:
+            raise BotVoiceClientIsolation
 
         await self.reset_queue(interaction)
         self.get_bot_voice_client(interaction).stop()

@@ -4,7 +4,8 @@ import os
 
 class Config:   # requires populating/"loading" environment variables before import
     SECRET_TOKEN = os.environ.get("TOKEN")
-    APPLICATION_ID = os.environ.get("ID")
+    APPLICATION_ID = int(os.environ.get("ID"))
+    UID = int(os.environ.get("UID"))
 
     INTENTS = {
         "MESSAGE_CONTENT": True,
@@ -75,8 +76,9 @@ exit
 
 """current-target
 - set up logging
-- help command
+- help command (nah)
 - server stats thingy
+- en/de-coder
 """
 
 """example-invite-link

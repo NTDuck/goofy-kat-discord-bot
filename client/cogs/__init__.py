@@ -20,6 +20,10 @@ class CustomCog(commands.Cog):
         # avoid full evaluation & if else
         # but still looks pathetic anw
         # children functions take up exactly 1 argument
+        def _CheckFailure(interaction: discord.Interaction) -> str:
+            return sup("an unknown exception occurred")
+        def _Unauthorized(interaction: discord.Interaction) -> str:
+            return sup(f"user `{interaction.user.name}` is not the chosen one")
         def _MissingPermissions(interaction: discord.Interaction) -> str:
             return sup(f"user `{interaction.user.name}` does not have proper permissions")
         def _BotMissingPermissions(interaction: discord.Interaction) -> str:
@@ -36,6 +40,8 @@ class CustomCog(commands.Cog):
             return sup(f"bot `{interaction.client.user.name}` is already paused in voice channel `{self.get_bot_voice_client(interaction).channel.name}`")
         def _BotVoiceClientAlreadyPlaying(interaction: discord.Interaction) -> str:
             return sup(f"bot `{interaction.client.user.name}` is already playing in voice channel `{self.get_bot_voice_client(interaction).channel.name}`")
+        def _BotVoiceClientIsolation(interactio: discord.Interaction) -> str:
+            return sup(f"bot `{interaction.client.user.name}` is in `isolation`")
         def _BotVoiceClientQueueEmpty(interaction: discord.Interaction) -> str:
             return sup(f"bot `{interaction.client.user.name}`'s queue is empty")
         def _KeywordNotFound(interaction: discord.Interaction) -> str:

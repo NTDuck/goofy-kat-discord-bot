@@ -165,3 +165,7 @@ cython_debug/
 
 # redis
 *.rdb
+
+# secret assets
+__secret__/
+__secrets__/
