@@ -5,7 +5,7 @@ from typing import Sequence, Union
 
 import discord
 
-from ..const.command import FAILURE, SUCCESS, PENDING
+from ..const.command import FAILURE, SUCCESS, PENDING, ANXIOUS
 
 
 def status_update_prefix(msg: str, state=FAILURE) -> str:
@@ -13,6 +13,7 @@ def status_update_prefix(msg: str, state=FAILURE) -> str:
         FAILURE: "error",
         SUCCESS: "success",
         PENDING: "pending",
+        ANXIOUS: "anxious",
     }
     return f"**{_d[state]}**: {msg}."   # exception handling not required: param not dependent on user input
 
