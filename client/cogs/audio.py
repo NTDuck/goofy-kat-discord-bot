@@ -1,7 +1,7 @@
 
 import asyncio
+import random
 from collections.abc import Mapping
-from io import BytesIO
 from typing import Callable
 
 import discord
@@ -11,7 +11,7 @@ from . import CustomCog
 from ..const.audio import PAUSED, PLAYING, ISOLATED
 from ..const.command import SUCCESS
 from ..errors import *
-from ..utils.fetch import fetch_ytb_audio_info, random_local_asset
+from ..utils.fetch import fetch_ytb_audio_info, assets
 from ..utils.formatter import status_update_prefix as sup
 
 
@@ -161,7 +161,7 @@ class AudioCog(CustomCog):
         state = data["voice"]["state"]
 
         if state != ISOLATED:
-            file = random_local_asset("audio", "__secret__")
+            file = assets("audio", "__secret__")
             src = discord.FFmpegPCMAudio(file)
             self.get_bot_voice_client(interaction).play(discord.PCMVolumeTransformer(src), after=after_func)
 

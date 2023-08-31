@@ -23,7 +23,7 @@ class CustomCog(commands.Cog):
         def _CheckFailure(interaction: discord.Interaction) -> str:
             return sup("an unknown exception occurred")
         def _Unauthorized(interaction: discord.Interaction) -> str:
-            return sup(f"user `{interaction.user.name}` is not the chosen one")
+            return sup("You don't have the right O you don't have the right")
         def _MissingPermissions(interaction: discord.Interaction) -> str:
             return sup(f"user `{interaction.user.name}` does not have proper permissions")
         def _BotMissingPermissions(interaction: discord.Interaction) -> str:
@@ -40,7 +40,7 @@ class CustomCog(commands.Cog):
             return sup(f"bot `{interaction.client.user.name}` is already paused in voice channel `{self.get_bot_voice_client(interaction).channel.name}`")
         def _BotVoiceClientAlreadyPlaying(interaction: discord.Interaction) -> str:
             return sup(f"bot `{interaction.client.user.name}` is already playing in voice channel `{self.get_bot_voice_client(interaction).channel.name}`")
-        def _BotVoiceClientIsolation(interactio: discord.Interaction) -> str:
+        def _BotVoiceClientIsolation(interaction: discord.Interaction) -> str:
             return sup(f"bot `{interaction.client.user.name}` is in `isolation`")
         def _BotVoiceClientQueueEmpty(interaction: discord.Interaction) -> str:
             return sup(f"bot `{interaction.client.user.name}`'s queue is empty")
@@ -59,12 +59,12 @@ class CustomCog(commands.Cog):
 
 
 from .audio import AudioCog
-from .fun import FunCog
+from .fun import DecodeCog, EncodeCog, FunCog
 from .misc import MiscCog
 from .utils import UtilityCog
 
 
 async def setup(client: discord.Client):   # register as ext
-    cogs = {AudioCog, FunCog, MiscCog, UtilityCog}
+    cogs = {AudioCog, DecodeCog, EncodeCog, FunCog, MiscCog, UtilityCog}
     for cog in cogs:
         await client.add_cog(cog(client))

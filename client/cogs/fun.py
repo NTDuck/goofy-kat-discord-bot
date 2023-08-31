@@ -5,14 +5,86 @@ from collections.abc import Mapping
 
 import discord
 from discord import app_commands
+from discord.ext import commands
 
 from . import CustomCog
 from ..const.command import SUCCESS
 from ..const.fetch import JSON, BINARY
+from ..utils.cryptography import atbash, caesar, caesar_rev, base64, base64_rev, a1z26, a1z26_rev
 from ..utils.fetch import fetch
 from ..utils.formatter import status_update_prefix as sup, incremental_response
 from ..views.choice import MikuView
 from ..views.tictactoe import TicTacToeView
+
+
+class EncodeCog(commands.GroupCog, name="encode"):
+    def __init__(self, client: discord.Client):
+        self.client = client
+        super().__init__()
+
+    @app_commands.command(description="encode something using a1z26 cipher.")
+    @app_commands.describe(str="anything really")
+    async def a1z26(self, interaction: discord.Interaction, str: str):
+        enc_str = a1z26(
+            str,
+            char_sep=interaction.client.config["ENCODING"]["a1z26"]["char_sep"],
+            word_sep=interaction.client.config["ENCODING"]["a1z26"]["word_sep"],
+        )
+        await interaction.response.send_message(content=f"`{enc_str}`")
+    
+    @app_commands.command(description="encode something using atbash cipher.")
+    @app_commands.describe(str="anything really")
+    async def atbash(self, interaction: discord.Interaction, str: str):
+        enc_str = atbash(str)
+        await interaction.response.send_message(content=f"`{enc_str}`")
+
+    @app_commands.command(description="encode something using caesar cipher.")
+    @app_commands.describe(str="anything really")
+    async def caesar(self, interaction: discord.Interaction, str: str):
+        enc_str = caesar(str, shift=interaction.client.config["ENCODING"]["caesar"]["shift"])
+        await interaction.response.send_message(content=f"`{enc_str}`")
+
+    @app_commands.command(description="encode something using base64.")
+    @app_commands.describe(str="anything really")
+    async def base64(self, interaction: discord.Interaction, str: str):
+        enc_str = base64(str)
+        await interaction.response.send_message(content=f"`{enc_str}`")
+
+    # morse
+
+
+class DecodeCog(commands.GroupCog, name="decode"):
+    def __init__(self, client: discord.Client):
+        self.client = client
+        super().__init__()
+
+    @app_commands.command(description="decode something using a1z26 cipher.")
+    @app_commands.describe(str="anything really")
+    async def a1z26(self, interaction: discord.Interaction, str: str):
+        dec_str = a1z26_rev(
+            str,
+            char_sep=interaction.client.config["ENCODING"]["a1z26"]["char_sep"],
+            word_sep=interaction.client.config["ENCODING"]["a1z26"]["word_sep"],
+        )
+        await interaction.response.send_message(content=f"`{dec_str}`")
+
+    @app_commands.command(description="decode something using atbash cipher.")
+    @app_commands.describe(str="anything really")
+    async def atbash(self, interaction: discord.Interaction, str: str):
+        dec_str = atbash(str)
+        await interaction.response.send_message(content=f"`{dec_str}`")
+
+    @app_commands.command(description="decode something using caesar cipher.")
+    @app_commands.describe(str="anything really")
+    async def caesar(self, interaction: discord.Interaction, str: str):
+        dec_str = caesar_rev(str, shift=interaction.client.config["ENCODING"]["caesar_shift"])
+        await interaction.response.send_message(content=f"`{dec_str}`")
+
+    @app_commands.command(description="decode something using base64.")
+    @app_commands.describe(str="anything really")
+    async def base64(self, interaction: discord.Interaction, str: str):
+        dec_str = base64_rev(str)
+        await interaction.response.send_message(content=f"`{dec_str}`")
 
 
 class FunCog(CustomCog):
@@ -81,3 +153,8 @@ class FunCog(CustomCog):
     @app_commands.checks.cooldown(rate=1, per=3.0, key=lambda i: (i.guild_id, i.user.id))
     async def tictactoe(self, interaction: discord.Interaction, size: app_commands.Range[int, 3, 5]):
         await interaction.response.send_message(content="play a game of tic-tac-toe.", view=TicTacToeView(user=interaction.user, size=(size, size)))
+
+    @app_commands.command(description="reverse provided string (really useful!)")
+    @app_commands.describe(string="anything really")
+    async def rev(self, interaction: discord.Interaction, string: str):
+        await interaction.response.send_message(content=f"`{string[::-1]}`")

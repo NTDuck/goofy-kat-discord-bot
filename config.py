@@ -34,6 +34,16 @@ class Config:   # requires populating/"loading" environment variables before imp
         }],
     }
 
+    ENCODING = {
+        "a1z26": {
+            "char_sep": "-",
+            "word_sep": " ",
+        },
+        "caesar": {
+            "shift": 3,
+        },
+    }
+
     MAX_CLEAR_LIMIT = 100
 
     COMMAND_PREFIX = "$"

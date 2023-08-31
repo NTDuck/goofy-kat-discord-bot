@@ -2,7 +2,7 @@
 import os
 import random
 from collections.abc import Mapping
-from typing import Union
+from typing import Iterable, Optional, Union
 
 from io import BytesIO
 from aiohttp import ClientSession, ClientResponse
@@ -11,8 +11,9 @@ from yt_dlp import YoutubeDL
 from ..const.fetch import JSON, BINARY
 
 
-def random_local_asset(*dirs, basedir=["client", "assets"]):   # might raise OSError if path fails
+def assets(*dirs, basedir=["client", "assets"]) -> Optional[Iterable[str]]:   # might raise OSError if path fails
     dir = os.path.join(*basedir, *dirs)
+    # return os.listdir(dir)   # all files in specified directory
     return os.path.join(*basedir, *dirs, random.choice(os.listdir(dir)))
             
 
