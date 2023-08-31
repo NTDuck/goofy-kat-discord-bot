@@ -10,7 +10,7 @@ from discord.ext import commands
 from . import CustomCog
 from ..const.command import SUCCESS
 from ..const.fetch import JSON, BINARY
-from ..utils.cryptography import atbash, caesar, caesar_rev, base64, base64_rev, a1z26, a1z26_rev
+from ..utils.cryptography import atbash, caesar, caesar_rev, base64, base64_rev, a1z26, a1z26_rev, morse, morse_rev
 from ..utils.fetch import fetch
 from ..utils.formatter import status_update_prefix as sup, incremental_response
 from ..views.choice import MikuView
@@ -25,10 +25,10 @@ class EncodeCog(commands.GroupCog, name="encode"):
     @app_commands.command(description="encode something using a1z26 cipher.")
     @app_commands.describe(str="anything really")
     async def a1z26(self, interaction: discord.Interaction, str: str):
-        enc_str = a1z26(
-            str,
-            char_sep=interaction.client.config["ENCODING"]["a1z26"]["char_sep"],
-            word_sep=interaction.client.config["ENCODING"]["a1z26"]["word_sep"],
+        cfg = interaction.client.config["ENCODING"]["a1z26"]
+        enc_str = a1z26(str,
+            char_sep=cfg["char_sep"],
+            word_sep=cfg["word_sep"],
         )
         await interaction.response.send_message(content=f"`{enc_str}`")
     
@@ -50,7 +50,17 @@ class EncodeCog(commands.GroupCog, name="encode"):
         enc_str = base64(str)
         await interaction.response.send_message(content=f"`{enc_str}`")
 
-    # morse
+    @app_commands.command(description="encode something using international morse code.")
+    @app_commands.describe(str="anything really")
+    async def morse(self, interaction: discord.Interaction, str: str):
+        cfg = interaction.client.config["ENCODING"]["morse"]
+        enc_str = morse(str,
+            _dit=cfg["dit"],
+            _dah=cfg["dah"],
+            _char_sep=cfg["char_sep"],
+            _word_sep=cfg["word_sep"],
+        )
+        await interaction.response.send_message(content=f"`{enc_str}`")
 
 
 class DecodeCog(commands.GroupCog, name="decode"):
@@ -61,10 +71,11 @@ class DecodeCog(commands.GroupCog, name="decode"):
     @app_commands.command(description="decode something using a1z26 cipher.")
     @app_commands.describe(str="anything really")
     async def a1z26(self, interaction: discord.Interaction, str: str):
+        cfg = interaction.client.config["ENCODING"]["a1z26"]
         dec_str = a1z26_rev(
             str,
-            char_sep=interaction.client.config["ENCODING"]["a1z26"]["char_sep"],
-            word_sep=interaction.client.config["ENCODING"]["a1z26"]["word_sep"],
+            char_sep=cfg["char_sep"],
+            word_sep=cfg["word_sep"],
         )
         await interaction.response.send_message(content=f"`{dec_str}`")
 
@@ -84,6 +95,19 @@ class DecodeCog(commands.GroupCog, name="decode"):
     @app_commands.describe(str="anything really")
     async def base64(self, interaction: discord.Interaction, str: str):
         dec_str = base64_rev(str)
+        await interaction.response.send_message(content=f"`{dec_str}`")
+
+    @app_commands.command(description="decode something using international morse code.")
+    @app_commands.describe(str="anything really")
+    async def morse(self, interaction: discord.Interaction, str: str):
+        cfg = interaction.client.config["ENCODING"]["morse"]
+        dec_str = morse_rev(str,
+            _dit=cfg["dit"],
+            _dah=cfg["dah"],
+            _char_sep=cfg["char_sep"],
+            _word_sep=cfg["word_sep"],
+            _null_repr=cfg["null_repr"],
+        )
         await interaction.response.send_message(content=f"`{dec_str}`")
 
 

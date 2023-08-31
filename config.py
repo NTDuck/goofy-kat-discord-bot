@@ -42,6 +42,13 @@ class Config:   # requires populating/"loading" environment variables before imp
         "caesar": {
             "shift": 3,
         },
+        "morse": {
+            "dit": ".",
+            "dah": "-",
+            "char_sep": " ",
+            "word_sep": " / ",
+            "null_repr": "#",   # invalid/untranslatable morse code
+        }
     }
 
     MAX_CLEAR_LIMIT = 100
