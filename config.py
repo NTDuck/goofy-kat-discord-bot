@@ -14,6 +14,12 @@ class Config:   # requires populating/"loading" environment variables before imp
         "PRESENCES": False,
     }
 
+    LOGGING_CONFIG = {
+        "filename": "discord.log",
+        "encoding": "utf-8",
+        "mode": "w",
+    }
+
     REDIS_CONFIG = {
         "host": "localhost",
         "port": 6379,

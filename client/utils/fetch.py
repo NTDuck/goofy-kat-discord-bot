@@ -8,13 +8,16 @@ from io import BytesIO
 from aiohttp import ClientSession, ClientResponse
 from yt_dlp import YoutubeDL
 
+from . import logger
 from ..const.fetch import JSON, BINARY
 
 
 def assets(*dirs, basedir=["client", "assets"]) -> Optional[Iterable[str]]:   # might raise OSError if path fails
     dir = os.path.join(*basedir, *dirs)
     # return os.listdir(dir)   # all files in specified directory
-    return os.path.join(*basedir, *dirs, random.choice(os.listdir(dir)))
+    asset = os.path.join(*basedir, *dirs, random.choice(os.listdir(dir)))
+    logger.debug(f"asset {asset} invoked")
+    return asset
             
 
 async def fetch(session: ClientSession, url: str, format: int, **kwargs):   # kwargs expect headers & query params

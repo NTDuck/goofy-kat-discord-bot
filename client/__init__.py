@@ -4,15 +4,16 @@ from typing import Any
 import pickle
 
 from aiohttp import ClientSession
-from discord import Intents, Game
-from discord.ext.commands import Bot, when_mentioned_or
+from discord.ext import commands
 from redis.asyncio import Redis
+import discord
 
 from .annotations import GuildDataMapping, GuildVoiceDataMapping
 from .const.audio import PAUSED
+from logger import root_logger
 
 
-class CustomClient(Bot):
+class CustomClient(commands.Bot):
     def __init__(self, config: Mapping[str, Any], redis_cli: Redis, **kwargs) -> None:
         super().__init__(**kwargs)
         self.config = config
@@ -34,17 +35,23 @@ class CustomClient(Bot):
             }
         }
         data = pickle.dumps(default_state)   # pickle serialization is done once & populate all guilds
+        
+        counter = 0
+        guilds: list[discord.Guild] = []
         async for guild in self.fetch_guilds():
+            counter += 1
+            guilds.append(guild)
             await self.redis_cli.set(guild.id, data)
+        root_logger.info(f"connected to {counter} guilds: {', '.join([f'{guild.name} (id: {guild.id})' for guild in guilds])}")
+
         await self.load_extension("client.cogs")
-        # for c in self.tree.get_commands():
-        #     print(c.name)
+
+        app_commands = await self.tree.fetch_commands()
         await self.tree.sync()
-        # await self.wait_until_ready()
+        root_logger.info(f"synced {len(app_commands)} app commands: {', '.join(['/' + i.name for i in app_commands])}")
 
     async def on_ready(self):
-        print(f"logged in as {self.user} (id: {self.user.id})")
-        print("----")
+        root_logger.info(f"logged in as {self.user.name} (id: {self.user.id})")
 
     async def start(self, session=None):
         if session is None:
@@ -55,16 +62,16 @@ class CustomClient(Bot):
 
 # app factory pattern similar to flask
 def create_client(config: Mapping[str, Any]):
-    intents = Intents.default()
+    intents = discord.Intents.default()
     for attr, value in config["INTENTS"].items():
         setattr(intents, attr.lower(), value)
 
-    activity = Game(config["GAME_NAME"])
+    activity = discord.Game(config["GAME_NAME"])
     redis_cli = Redis(**config["REDIS_CONFIG"])   # async cli
 
     client = CustomClient(
         intents=intents,
-        command_prefix=when_mentioned_or(config["COMMAND_PREFIX"]),
+        command_prefix=commands.when_mentioned_or(config["COMMAND_PREFIX"]),
         activity=activity,
         config=config,
         redis_cli=redis_cli,

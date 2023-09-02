@@ -5,6 +5,7 @@ import random
 
 import discord
 
+from . import logger
 from ..const.command import SUCCESS, PENDING, ANXIOUS
 from ..const.tictactoe import X, O, N
 from ..utils.formatter import status_update_prefix as sup
@@ -60,6 +61,8 @@ class TicTacToeButton(discord.ui.Button["TicTacToeView"]):
             await view.on_game_over(interaction)
             return
         await view.bot_move(interaction)
+
+        logger.debug(f"button ({self._x}, {self._y}) invoked by {interaction.user.name} (uid: {interaction.user.id})")
 
 
 class TicTacToeView(discord.ui.View, TicTacToeUtils):

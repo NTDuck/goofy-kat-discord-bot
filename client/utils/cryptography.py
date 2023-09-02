@@ -17,7 +17,7 @@ def _caesar(shift=3) -> Mapping[str, str]:
         _d.update({chr(o): chr(o - shift) for o in range(ord(_start) + shift, ord(_stop) + 1)})
     return _d
 
-def _morse(_dit=".", _dah="-") -> Mapping[Union[str, int], str]:\
+def _morse(_dit=".", _dah="-") -> Mapping[Union[str, int], str]:
     # https://en.wikipedia.org/wiki/Morse_code
     # warning: contains identical values - non-latin extensions
     # manually typed in so errors could inevitably occur
@@ -50,16 +50,16 @@ def _morse(_dit=".", _dah="-") -> Mapping[Union[str, int], str]:\
         "y": _dah + _dit + _dah * 2,
         "z": _dah * 2 + _dit * 2,
         # numbers
-        0: _dah * 5,
-        1: _dit + _dah * 4,
-        2: _dit * 2 + _dah * 3,
-        3: _dit * 3 + _dah * 2,
-        4: _dit * 4 + _dah * 1,
-        5: _dit * 5,
-        6: _dah + _dit * 4,
-        7: _dah * 2 + _dit * 3,
-        8: _dah * 3 + _dit * 2,
-        9: _dah * 4 + _dit,
+        "0": _dah * 5,
+        "1": _dit + _dah * 4,
+        "2": _dit * 2 + _dah * 3,
+        "3": _dit * 3 + _dah * 2,
+        "4": _dit * 4 + _dah * 1,
+        "5": _dit * 5,
+        "6": _dah + _dit * 4,
+        "7": _dah * 2 + _dit * 3,
+        "8": _dah * 3 + _dit * 2,
+        "9": _dah * 4 + _dit,
         # punctuations
         ".": (_dit + _dah) * 3,
         ",": _dah * 2 + _dit * 2 + _dah * 2,

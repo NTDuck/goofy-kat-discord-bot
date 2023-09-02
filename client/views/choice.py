@@ -2,6 +2,8 @@
 from typing import Iterable, Optional, Union
 import discord
 
+from . import logger
+
 
 # abc
 class ChoiceButton(discord.ui.Button["ChoiceView"]):
@@ -15,6 +17,7 @@ class ChoiceButton(discord.ui.Button["ChoiceView"]):
         await view.on_timeout()
         await interaction.response.edit_message(view=view)
         
+        logger.debug(f"button {self.label} invoked by {interaction.user.name} (uid: {interaction.user.id})")
 
 class ChoiceView(discord.ui.View):
     children: Iterable[ChoiceButton]
