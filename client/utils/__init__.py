@@ -1,3 +1,3 @@
 
-import logging
-logger = logging.getLogger("utils")
+from logger import logger as root
+logger = root.getChild(__name__)

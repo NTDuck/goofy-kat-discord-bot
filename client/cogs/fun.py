@@ -17,7 +17,7 @@ from ..views.tictactoe import TicTacToeView
 
 class FunCog(CustomCog):
     def __init__(self, client: discord.Client):
-        self.client = client
+        super().__init__(client)
 
     @app_commands.command(description="receive a random cat! yay!")
     @app_commands.checks.cooldown(rate=1, per=2.0, key=lambda i: (i.guild_id, i.user.id))

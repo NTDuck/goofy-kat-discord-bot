@@ -1,7 +1,8 @@
 
 from typing import Iterable, Optional, Union
-import discord
+import logging
 
+import discord
 from . import logger
 
 
@@ -17,13 +18,14 @@ class ChoiceButton(discord.ui.Button["ChoiceView"]):
         await view.on_timeout()
         await interaction.response.edit_message(view=view)
         
-        logger.debug(f"button {self.label} invoked by {interaction.user.name} (uid: {interaction.user.id})")
+        view.logger.debug(f"button {self.label} invoked by {interaction.user.name} (uid: {interaction.user.id})")
 
 class ChoiceView(discord.ui.View):
     children: Iterable[ChoiceButton]
     def __init__(self, _children: Iterable[ChoiceButton], timeout: Optional[float] = 180):
         super().__init__(timeout=timeout)
         self.value = None
+        self.logger = logging.getLogger(f"app.views.{self.__class__.__name__}")
         for item in _children:
             self.add_item(item)
 

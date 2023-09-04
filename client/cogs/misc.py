@@ -7,7 +7,7 @@ from . import CustomCog
 
 class MiscCog(CustomCog):
     def __init__(self, client: discord.Client):
-        self.client = client
+        super().__init__(client)
 
     @app_commands.command(description="check whether the bot's up and running.")
     async def ping(self, interaction: discord.Interaction):

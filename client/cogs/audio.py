@@ -24,7 +24,7 @@ class AudioData:   # pickle serializable
 
 class AudioCog(CustomCog):
     def __init__(self, client: discord.Client):
-        self.client = client
+        super().__init__(client)
 
     async def _get(self, interaction: discord.Interaction) -> Mapping:
         return await interaction.client._get(id=interaction.guild_id)

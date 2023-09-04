@@ -1,32 +1,26 @@
 
-from typing import Sequence
-import logging
-
 from discord import app_commands
 from discord.ext import commands
 import discord
 
+from logger import logger as root
 from ..const.command import PENDING
 from ..utils.formatter import status_update_prefix as sup
 
 
 # set up module-specific logger
-logger = logging.getLogger("cogs")
+logger = root.getChild(__name__)
 
 
 class CustomCog(commands.Cog):
     def __init__(self, client: discord.Client) -> None:
         super().__init__()
         self.client = client
+        self.logger = logger.getChild(self.__class__.__name__)
 
     @staticmethod
     async def notify(interaction: discord.Interaction):
         await interaction.response.send_message(content=sup("command processing, please wait a few seconds `(╯°□°)╯︵ ┻━┻`", state=PENDING))
-    
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        # decoy check - exists solely for logging purposes
-        logger.debug(f"command /{interaction.command.name} invoked by {interaction.user.name} (uid: {interaction.user.id})")
-        return True
 
     async def cog_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         # avoid full evaluation & if else
@@ -59,7 +53,7 @@ class CustomCog(commands.Cog):
         def _KeywordNotFound(interaction: discord.Interaction) -> str:
             return sup(f"bot `{interaction.client.user.name}` could not find video matching provided keyword")
         
-        logger.error(f"exception {error.__class__.__name__} raised from command /{interaction.command.name} by {interaction.user.name} (uid: {interaction.user.id}) (id: {interaction.id})")
+        self.logger.error(f"exception {error.__class__.__name__} raised from command /{interaction.command.name} by {interaction.user.name} (uid: {interaction.user.id}) (id: {interaction.id})")
         
         key = f"_{error.__class__.__name__}"
         if key not in locals():
@@ -76,11 +70,7 @@ class CustomGroupCog(commands.GroupCog):
     def __init__(self, client: discord.Client) -> None:
         super().__init__()
         self.client = client
-
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        # decoy check - exists solely for logging purposes
-        logger.debug(f"command /{interaction.command.parent.name} {interaction.command.name} invoked by {interaction.user.name} (uid: {interaction.user.id})")
-        return True
+        self.logger = logger.getChild(self.__class__.__name__)
 
 
 from .audio import AudioCog
@@ -93,4 +83,5 @@ async def setup(client: discord.Client):   # register as ext
     cogs = {AudioCog, DecodeCog, EncodeCog, FunCog, MiscCog, UtilityCog}
     for cog in cogs:
         await client.add_cog(cog(client))
-    logger.info(f"set up {len(cogs)} cogs")
+    logger.info(f"set up {len(cogs)} cogs: {', '.join([i.__name__ for i in cogs])}")
+    # warning: logger name is app.client.cogs instead of app.cogs

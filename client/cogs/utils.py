@@ -105,7 +105,7 @@ class DecodeCog(CustomGroupCog, name="decode"):
 
 class UtilityCog(CustomCog):
     def __init__(self, client: discord.Client):
-        self.client = client
+        super().__init__(client)
 
     # should require near-administrative privileges
     @app_commands.command(description="clear messages within the current text channel.")

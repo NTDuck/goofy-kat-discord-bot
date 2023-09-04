@@ -2,6 +2,7 @@
 from typing import Iterable, Optional, Tuple
 import asyncio
 import random
+import logging
 
 import discord
 
@@ -74,14 +75,18 @@ class TicTacToeView(discord.ui.View, TicTacToeUtils):
         super().__init__(timeout=timeout)
         self.user = user
         self.size = size
+        self.logger = logger.getChild(self.__class__.__name__)
+
         x, y = size
         self.state = [[0 for _ in range(x)] for _ in range(y)]   # mutable
         self.l_coords = self.create_l_coords(size=self.size, n=N)   # immutable
         self.button_mapping = {(_x, _y): TicTacToeButton(_x, _y) for _x in range(x) for _y in range(y)}   # immutable
+
         self.current_turn = X   # X goes first
         self.moves = 0
         self.cheated = False
         self.acknowledge_defeat = False
+
         for item in self.button_mapping.values():
             self.add_item(item)
 
