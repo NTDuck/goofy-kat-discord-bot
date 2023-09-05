@@ -8,10 +8,15 @@ class Config:   # requires populating/"loading" environment variables before imp
     UID = int(os.environ.get("UID"))
 
     INTENTS = {
+        "GUILDS": True,
+        "GUILD_SCHEDULED_EVENTS": True,
+        "MEMBERS": True,
         "MESSAGE_CONTENT": True,
-        "TYPING": False,
+        "MESSAGES": True,
+        "MODERATION": False,
+        "PRESENCES": True,
+        "TYPING": True,
         "VOICE_STATES": True,
-        "PRESENCES": False,
     }
 
     LOGGING_CONFIG = {

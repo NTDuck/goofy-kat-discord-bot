@@ -1,7 +1,7 @@
 
 import asyncio
 from collections.abc import Mapping
-from typing import Sequence, Union
+from typing import Any, Callable, Optional, Sequence, Union
 
 import discord
 
@@ -38,3 +38,26 @@ async def incremental_response(interaction: discord.Interaction, msg: str, signa
         tmp += _s
         await interaction.edit_original_response(content=tmp)
         await asyncio.sleep(_t)
+
+def _diff(_d: Mapping[str, Mapping[str, Union[str, Callable[..., str]]]], before: Any, after: Any) -> Sequence[Optional[str]]:
+    """
+    `_d` is usually a dict that looks like this:
+    ```
+    _d = {
+        "attr1": {
+            "repr": "somestring",
+            "fmt": "someconverter",
+            # other keys not allowed
+        },
+    }
+    ```
+    """
+    diff = []
+    for attr, data in _d.items():
+        if getattr(before, attr) == getattr(after, attr):
+            continue
+        repr = data.get("repr", attr)
+        fmt = data.get("fmt", lambda _: _)
+        msg = f"{repr}: {fmt(getattr(before, attr))} -> {fmt(getattr(after, attr))}"
+        diff.append(msg)
+    return diff

@@ -83,5 +83,5 @@ async def setup(client: discord.Client):   # register as ext
     cogs = {AudioCog, DecodeCog, EncodeCog, FunCog, MiscCog, UtilityCog}
     for cog in cogs:
         await client.add_cog(cog(client))
-    logger.info(f"set up {len(cogs)} cogs: {', '.join([i.__name__ for i in cogs])}")
+    logger.info(f"set up {len(cogs)} cogs: {', '.join([cog.__name__ for cog in cogs])}")
     # warning: logger name is app.client.cogs instead of app.cogs
