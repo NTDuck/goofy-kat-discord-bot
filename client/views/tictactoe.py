@@ -2,14 +2,13 @@
 from typing import Iterable, Optional, Tuple
 import asyncio
 import random
-import logging
 
 import discord
 
 from . import logger
 from ..const.command import SUCCESS, PENDING, ANXIOUS
 from ..const.tictactoe import X, O, N
-from ..utils.formatter import status_update_prefix as sup
+from ..utils.formatting import status_update_prefix as sup, c, sp
 from ..utils.tictactoe import TicTacToeUtils
 
 
@@ -49,11 +48,11 @@ class TicTacToeButton(discord.ui.Button["TicTacToeView"]):
         view: TicTacToeView = self.view
         # not tested
         if interaction.user.id != view.user.id:   # hey, only 1 player!
-            await interaction.response.send_message(content=sup(f"`{interaction.user.name}`, you are not allowed to play - this is `{view.user.name}`'s only"))
+            await interaction.response.send_message(content=sup(f"{c(interaction.user.name)}, you are not allowed to play - this is {c(view.user.name)}'s only"))
             return
         if view.current_turn == X:
             self.update_on_user_turn(view)
-            content = sup(f"please wait for bot `{interaction.client.user.name}` to make a move", state=PENDING)
+            content = sup(f"please wait for bot {c(interaction.client.user.name)} to make a move", state=PENDING)
         else:
             view.cheated = True
         view.moves += 1
@@ -71,10 +70,11 @@ class TicTacToeView(discord.ui.View, TicTacToeUtils):
     param `size`: (3, 3) -> (5, 5)
     """
     children: Iterable[TicTacToeButton]
-    def __init__(self, user: discord.User, size: Tuple[int, int], timeout: Optional[float] = 180):
+    def __init__(self, user: discord.User, size: Tuple[int, int], interaction: discord.Interaction, timeout: Optional[float] = 180):
         super().__init__(timeout=timeout)
         self.user = user
         self.size = size
+        self.interaction = interaction
         self.logger = logger.getChild(self.__class__.__name__)
 
         x, y = size
@@ -89,6 +89,12 @@ class TicTacToeView(discord.ui.View, TicTacToeUtils):
 
         for item in self.button_mapping.values():
             self.add_item(item)
+
+    async def on_timeout(self):
+        for item in self.children:
+            item.disabled = True
+        self.stop()
+        await self.interaction.edit_original_response(view=self)
 
     def bot_choice(self) -> Tuple[int, int]:
         """
@@ -124,7 +130,7 @@ class TicTacToeView(discord.ui.View, TicTacToeUtils):
     async def bot_move(self, interaction: discord.Interaction):
         if self.cheated:
             self.on_cheat()
-            content = sup(f"user `{interaction.user.name}` cheated. shame on you")
+            content = sup(f"user {c(interaction.user.name)} cheated. shame on you")
             await interaction.edit_original_response(content=content, view=self)
             return
         choice = self.bot_choice()
@@ -135,7 +141,7 @@ class TicTacToeView(discord.ui.View, TicTacToeUtils):
         button = self.button_mapping[choice]
         button.update_on_bot_turn(self)
         self.moves += 1
-        content = sup(f"user `{interaction.user.name}`, your turn", state=SUCCESS) if not self.acknowledge_defeat else sup(f"user `{interaction.user.name}`, become ||elden lord||", state=ANXIOUS)
+        content = sup(f"user {c(interaction.user.name)}, your turn", state=SUCCESS) if not self.acknowledge_defeat else sup(f"user {c(interaction.user.name)}, become {sp('elden lord')}", state=ANXIOUS)
         await asyncio.sleep(1)
         await interaction.edit_original_response(content=content, view=self)
         if self.is_game_over():
@@ -158,7 +164,7 @@ class TicTacToeView(discord.ui.View, TicTacToeUtils):
         for item in self.children:
             item.update_on_over(cheat=False)
         self.stop()
-        content = sup(f"gg `{interaction.user.name}`, you won after `{self.moves}` moves", state=SUCCESS) if self.winner == X else sup(f"`{interaction.user.name}` is such a noob")
+        content = sup(f"gg {c(interaction.user.name)}, you won after {c(self.moves.__str__())} moves", state=SUCCESS) if self.winner == X else sup(f"{c(interaction.user.name)} is such a noob")
         await interaction.edit_original_response(content=content, view=self)
 
     def on_cheat(self):

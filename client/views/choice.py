@@ -1,5 +1,5 @@
 
-from typing import Iterable, Optional, Union
+from typing import Iterable, Optional
 import logging
 
 import discord
@@ -8,8 +8,8 @@ from . import logger
 
 # abc
 class ChoiceButton(discord.ui.Button["ChoiceView"]):
-    def __init__(self, value: int, style: Optional[discord.ButtonStyle] = discord.ButtonStyle.secondary, label: Optional[str] = None, disabled: bool = False, custom_id: Optional[str] = None, url: Optional[str] = None, emoji: Union[str, discord.emoji.Emoji, discord.partial_emoji.PartialEmoji, None] = None, row: Optional[int] = None):
-        super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id, url=url, emoji=emoji, row=row)
+    def __init__(self, value: int, **kwargs):
+        super().__init__(**kwargs)
         self.value = value
 
     async def callback(self, interaction: discord.Interaction):
@@ -22,10 +22,11 @@ class ChoiceButton(discord.ui.Button["ChoiceView"]):
 
 class ChoiceView(discord.ui.View):
     children: Iterable[ChoiceButton]
-    def __init__(self, _children: Iterable[ChoiceButton], timeout: Optional[float] = 180):
+    def __init__(self, _children: Iterable[ChoiceButton], interaction: discord.Interaction, timeout: Optional[float] = 180):
         super().__init__(timeout=timeout)
+        self.interaction = interaction
         self.value = None
-        self.logger = logging.getLogger(f"app.views.{self.__class__.__name__}")
+        self.logger = logger.getChild({self.__class__.__name__})
         for item in _children:
             self.add_item(item)
 
@@ -33,15 +34,16 @@ class ChoiceView(discord.ui.View):
         for item in self.children:
             item.disabled = True
         self.stop()
+        await self.interaction.edit_original_response(view=self)
 
 
 # practical uses
 class MikuView(ChoiceView):
     NO = 0
     YES = 1
-    def __init__(self, timeout: float | None = 180):
+    def __init__(self, interaction: discord.Interaction, timeout: float | None = 180):
         _children = [
             ChoiceButton(value=0, style=discord.ButtonStyle.danger, label="no"),
             ChoiceButton(value=1, style=discord.ButtonStyle.success, label="yes"),
         ]
-        super().__init__(_children=_children, timeout=timeout)
+        super().__init__(_children=_children, interaction=interaction, timeout=timeout)

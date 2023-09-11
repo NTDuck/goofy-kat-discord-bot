@@ -10,14 +10,14 @@ from . import CustomCog
 from ..const.command import SUCCESS
 from ..const.fetch import JSON, BINARY
 from ..utils.fetch import fetch
-from ..utils.formatter import status_update_prefix as sup, incremental_response
+from ..utils.formatting import status_update_prefix as sup, incremental_response, c
 from ..views.choice import MikuView
 from ..views.tictactoe import TicTacToeView
 
 
-class FunCog(CustomCog):
+class FunCog(CustomCog, name="images"):
     def __init__(self, client: discord.Client):
-        super().__init__(client)
+        super().__init__(client, index=1, emoji=":sob:")
 
     @app_commands.command(description="receive a random cat! yay!")
     @app_commands.checks.cooldown(rate=1, per=2.0, key=lambda i: (i.guild_id, i.user.id))
@@ -48,29 +48,31 @@ class FunCog(CustomCog):
         
         await self.notify(interaction)
         resp = await interaction.original_response()
-        await resp.add_reaction(random.choice([
+
+        reactions = [
             "🐱", "😿", "🙀", "😾", "😹", "😼", "😺", "😽", "😸", "😻",
-        ]))
+        ]
+        await resp.add_reaction(random.choice(reactions))
 
         cfg = interaction.client.config["API"]["cat"]
         src = random.choice(list(cfg))
         url, filename = await locals()[f"_{src}"](cfg[src])
 
         await interaction.edit_original_response(
-            content=sup(f"bot `{interaction.client.user.name}` sent a cat", state=SUCCESS),
+            content=sup(f"bot {c(interaction.client.user.name)} sent a cat", state=SUCCESS),
             attachments=[discord.File(fp=await fetch(interaction.client.session, url=url, format=BINARY), filename=filename)]
         )
 
     @app_commands.command(description="seek audience with the vocaloid anthropomorphism.")
     @app_commands.checks.cooldown(rate=1, per=3.0, key=lambda i: (i.guild_id, i.user.id))
     async def miku(self, interaction: discord.Interaction):
-        view = MikuView()
+        view = MikuView(interaction=interaction)
         await interaction.response.send_message(content="excuse me? are you british?", view=view)
         await view.wait()
         _d = {
-            view.NO: "kiss your homie",
+            view.NO: "k y s",
             view.YES: "oh no. oh no no no no no. hatsune miku does not talk to british people. the only pounds i need are me pounding your mom. se ka~",
-            None: "kiss your sister",
+            None: "k y s",
         }
         await incremental_response(interaction, msg=_d[view.value])
 
@@ -80,9 +82,9 @@ class FunCog(CustomCog):
     @app_commands.describe(size="the size of the board")
     @app_commands.checks.cooldown(rate=1, per=3.0, key=lambda i: (i.guild_id, i.user.id))
     async def tictactoe(self, interaction: discord.Interaction, size: app_commands.Range[int, 3, 5]):
-        await interaction.response.send_message(content="play a game of tic-tac-toe.", view=TicTacToeView(user=interaction.user, size=(size, size)))
+        await interaction.response.send_message(content="play a game of tic-tac-toe.", view=TicTacToeView(user=interaction.user, size=(size, size), interaction=interaction))
 
     @app_commands.command(description="reverse provided string (really useful!)")
     @app_commands.describe(string="anything really")
     async def rev(self, interaction: discord.Interaction, string: str):
-        await interaction.response.send_message(content=f"`{string[::-1]}`")
+        await interaction.response.send_message(content=f"{c(string[::-1])}")

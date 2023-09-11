@@ -12,11 +12,15 @@ from . import logger
 from ..const.fetch import JSON, BINARY
 
 
-def assets(*dirs, basedir=["client", "assets"]) -> Optional[Iterable[str]]:   # might raise OSError if path fails
+def local_asset(*dirs: str, basedir=["client", "assets"], filename: str) -> str:
+    asset = os.path.join(*basedir, *dirs, filename)
+    return asset
+
+
+def rand_local_asset(*dirs: str, basedir=["client", "assets"]) -> Optional[Iterable[str]]:   # might raise OSError if path fails
     dir = os.path.join(*basedir, *dirs)
     # return os.listdir(dir)   # all files in specified directory
     asset = os.path.join(*basedir, *dirs, random.choice(os.listdir(dir)))
-    logger.debug(f"asset {asset} invoked")
     return asset
             
 

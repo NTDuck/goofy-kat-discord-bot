@@ -1,4 +1,5 @@
 
+from collections import OrderedDict
 from collections.abc import Mapping
 from typing import Any, List, Optional, Union
 import datetime
@@ -13,7 +14,7 @@ import discord
 from logger import logger, queue_listener
 from .annotations import GuildDataMapping, GuildVoiceDataMapping
 from .const.audio import PAUSED
-from .utils.formatter import _diff
+from .utils.formatting import diff
 
 
 class CustomClient(commands.Bot):
@@ -113,8 +114,8 @@ class CustomClient(commands.Bot):
                 "fmt": lambda _memberflags: ', '.join([f"{attr}: {getattr(_memberflags, attr)}" for attr in {"value", "did_rejoin", "completed_onboarding", "bypasses_verification", "started_onboarding"}]),   # https://discordpy.readthedocs.io/en/stable/api.html#discord.MemberFlags
             },
         }
-        diff = _diff(_d, before, after)
-        self.logger.debug(f"member {after.name} (uid: {after.id}) in guild {after.guild.name} (id: {after.guild.id}) updated profile: {', '.join(diff)}")
+        _diff = diff(_d, before, after)
+        self.logger.debug(f"member {after.name} (uid: {after.id}) in guild {after.guild.name} (id: {after.guild.id}) updated profile: {', '.join(_diff)}")
 
     async def on_user_update(self, before: discord.User, after: discord.User):
         # similar implementation to self.on_member_update
@@ -127,8 +128,8 @@ class CustomClient(commands.Bot):
             },
             "discriminator": None,   # legacy
         }
-        diff = _diff(_d, before, after)
-        self.logger.debug(f"user {after.name} (uid: {after.id}) updated profile: {', '.join(diff)}")
+        _diff = diff(_d, before, after)
+        self.logger.debug(f"user {after.name} (uid: {after.id}) updated profile: {', '.join(_diff)}")
 
     # required intents: moderation
     async def on_member_ban(self, guild: discord.Guild, user: Union[discord.User, discord.Member]):
@@ -146,8 +147,8 @@ class CustomClient(commands.Bot):
     #             "fmt": lambda _activity: _activity.name,
     #         }
     #     }
-    #     diff = _diff(_d, before, after)
-    #     self.logger.debug(f"member {after.name} (uid: {after.id}) in guild {after.guild.name} (id: {after.guild.id}) updated presence: {', '.join(diff)}")
+    #     _diff = diff(_d, before, after)
+    #     self.logger.debug(f"member {after.name} (uid: {after.id}) in guild {after.guild.name} (id: {after.guild.id}) updated presence: {', '.join(_diff)}")
 
     # required intents: messages
     # omitted to avoid log spam
@@ -218,10 +219,22 @@ class CustomClient(commands.Bot):
 
     # real stuff
     async def setup_hook(self):
+        await self.populate_data()
+
+        await self.load_extension("client.cogs")
+        self.create_cogs_mapping()
+
+        await self.sync_app_commands()
+
+    def create_cogs_mapping(self):
+        """modify `self.cogs` into a `collections.OrderedDict` for help command purposes"""
+        self.cogs_ordered = OrderedDict(sorted(self.cogs.items(), key=lambda item: item[1].index))   # don't know how this works
+
+    async def populate_data(self):
         default_state: GuildVoiceDataMapping = {
             "voice": {
                 "state": PAUSED,
-                "queue": [],
+                "queue": [],   # list[client.cogs.audio.AudioData]
             }
         }
         data = pickle.dumps(default_state)   # pickle serialization is done once & populate all guilds
@@ -234,8 +247,7 @@ class CustomClient(commands.Bot):
             await self.redis_cli.set(guild.id, data)
         self.logger.info(f"connected to {counter} guilds: {', '.join([f'{guild.name} (id: {guild.id})' for guild in guilds])}")
 
-        await self.load_extension("client.cogs")
-
+    async def sync_app_commands(self):
         app_commands = await self.tree.fetch_commands()
         await self.tree.sync()
         self.logger.info(f"synced {len(app_commands)} app commands: {', '.join(['/' + i.name for i in app_commands])}")

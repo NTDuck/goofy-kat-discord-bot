@@ -67,7 +67,7 @@ class TicTacToeUtils:
         return None, None
     
     def find_threat(self, state: Iterable[Iterable[int]], arrs: Iterable[Tuple[Tuple[int, int]]]) -> Iterable[Optional[Tuple[int, int]]]:
-        """returns the list of `_l_coords` marked as `threat` (`n - 1` elements holding opponent's value, 1 element holding `0` value),"""
+        """returns the list of `_l_coords` marked as `threat` (`n - 1` elements holding opponent's value, 1 element holding `0` value)."""
         results = []
         for _l_coords in arrs:
             _threat_l_coords = self.find_matching_l_coords(_l_coords=_l_coords, state=state, _target=0, _target_count=1, _residue=X)
@@ -77,7 +77,7 @@ class TicTacToeUtils:
         return results
 
     def find_opportunity(self, state: Iterable[Iterable[int]], arrs: Iterable[Tuple[Tuple[int, int]]]) -> Iterable[Optional[Tuple[int, int]]]:
-        """returns the list of `_l_coords` marked as `opportunity` (`n - 1` elements holding self value, 1 element holding `0` value),"""
+        """returns the list of `_l_coords` marked as `opportunity` (`n - 1` elements holding self value, 1 element holding `0` value)."""
         results = []
         for _l_coords in arrs:
             _opportunity_l_coords = self.find_matching_l_coords(_l_coords=_l_coords, state=state, _target=0, _target_count=1, _residue=O)
