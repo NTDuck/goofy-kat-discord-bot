@@ -1,5 +1,6 @@
 
 import os
+from redis import UsernamePasswordCredentialProvider
 
 
 class Config:   # requires populating/"loading" environment variables before import
@@ -26,8 +27,9 @@ class Config:   # requires populating/"loading" environment variables before imp
     }
 
     REDIS_CONFIG = {
-        "host": "localhost",
-        "port": 6379,
+        "host": os.environ.get("REDIS_HOST"),
+        "port": os.environ.get("REDIS_PORT", 15688),
+        "credential_provider": UsernamePasswordCredentialProvider(os.environ.get("REDIS_USERNAME", "default"), os.environ.get("REDIS_PASSWORD"))
     }
 
     # https://pypi.org/project/yt-dlp/
@@ -49,9 +51,6 @@ class Config:   # requires populating/"loading" environment variables before imp
         "a1z26": {
             "char_sep": "-",
             "word_sep": " ",
-        },
-        "caesar": {
-            "shift": 3,
         },
         "morse": {
             "dit": ".",

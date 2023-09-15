@@ -19,9 +19,10 @@ class FunCog(CustomCog, name="images"):
     def __init__(self, client: discord.Client):
         super().__init__(client, index=1, emoji=":sob:")
 
-    @app_commands.command(description="receive a random cat! yay!")
+    @app_commands.command()
     @app_commands.checks.cooldown(rate=1, per=2.0, key=lambda i: (i.guild_id, i.user.id))
     async def cat(self, interaction: discord.Interaction):
+        """receive a random cat! yay!"""
         # children functions should return exactly 2 values
         async def _cataas(cfg: Mapping):
             url = cfg["url"]
@@ -63,9 +64,10 @@ class FunCog(CustomCog, name="images"):
             attachments=[discord.File(fp=await fetch(interaction.client.session, url=url, format=BINARY), filename=filename)]
         )
 
-    @app_commands.command(description="seek audience with the vocaloid anthropomorphism.")
+    @app_commands.command()
     @app_commands.checks.cooldown(rate=1, per=3.0, key=lambda i: (i.guild_id, i.user.id))
     async def miku(self, interaction: discord.Interaction):
+        """seek audience with the vocaloid anthropomorphism."""
         view = MikuView(interaction=interaction)
         await interaction.response.send_message(content="excuse me? are you british?", view=view)
         await view.wait()
@@ -78,13 +80,9 @@ class FunCog(CustomCog, name="images"):
 
     # gtn
     # rps
-    @app_commands.command(description="play some tic-tac-toe with the bot.")
+    @app_commands.command()
     @app_commands.describe(size="the size of the board")
     @app_commands.checks.cooldown(rate=1, per=3.0, key=lambda i: (i.guild_id, i.user.id))
     async def tictactoe(self, interaction: discord.Interaction, size: app_commands.Range[int, 3, 5]):
+        """play a game you can't lose. unless you're really dumb."""
         await interaction.response.send_message(content="play a game of tic-tac-toe.", view=TicTacToeView(user=interaction.user, size=(size, size), interaction=interaction))
-
-    @app_commands.command(description="reverse provided string (really useful!)")
-    @app_commands.describe(string="anything really")
-    async def rev(self, interaction: discord.Interaction, string: str):
-        await interaction.response.send_message(content=f"{c(string[::-1])}")

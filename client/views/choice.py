@@ -14,6 +14,7 @@ class ChoiceButton(discord.ui.Button["ChoiceView"]):
 
     async def callback(self, interaction: discord.Interaction):
         view: ChoiceView = self.view
+        view.interaction = interaction
         view.value = self.value
         await view.on_timeout()
         await interaction.response.edit_message(view=view)

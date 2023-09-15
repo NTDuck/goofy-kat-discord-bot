@@ -46,6 +46,7 @@ class TicTacToeButton(discord.ui.Button["TicTacToeView"]):
 
     async def callback(self, interaction: discord.Interaction):   # user's turn
         view: TicTacToeView = self.view
+        view.interaction = interaction
         # not tested
         if interaction.user.id != view.user.id:   # hey, only 1 player!
             await interaction.response.send_message(content=sup(f"{c(interaction.user.name)}, you are not allowed to play - this is {c(view.user.name)}'s only"))

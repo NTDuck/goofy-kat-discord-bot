@@ -7,7 +7,7 @@ from discord.ext import commands
 class HelpSelectMenu(discord.ui.Select["HelpView"]):
     """required: call method `set_options()` after instantiation with proper `interaction` param."""
     def __init__(self, client: discord.Client, **kwargs):
-        super().__init__(placeholder="hey!", **kwargs)
+        super().__init__(**kwargs)
         self.client = client
         self.options = self.set_options()
 

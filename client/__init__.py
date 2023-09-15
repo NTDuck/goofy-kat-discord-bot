@@ -86,9 +86,9 @@ class CustomClient(commands.Bot):
     async def on_member_remove(self, member: discord.Member):
         self.logger.debug(f"member {member.name} (uid: {member.id}) removed from guild {member.guild.name} (id: {member.guild.id})")
 
-    # called instead when guild/member not found in internal cache
-    async def on_raw_member_remove(self, payload: discord.RawMemberRemoveEvent):
-        self.logger.debug(f"member {payload.user.name} (uid: {payload.user.id}) removed from guild [unresolved] (id: {payload.guild_id})")
+    # # called instead when guild/member not found in internal cache
+    # async def on_raw_member_remove(self, payload: discord.RawMemberRemoveEvent):
+    #     self.logger.debug(f"member {payload.user.name} (uid: {payload.user.id}) removed from guild [unresolved] (id: {payload.guild_id})")
 
     async def on_member_update(self, before: discord.Member, after: discord.Member):
         # https://discordpy.readthedocs.io/en/stable/api.html#discord.on_member_update
@@ -156,26 +156,30 @@ class CustomClient(commands.Bot):
     #     ...
 
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
+        if after.author.id == self.user.id:
+            return
         self.logger.debug(f"message {before.content} -> {after.content} (id: {after.id}) from member {after.author.name} (uid: {after.author.id}) in channel {before.channel.name} (id: {before.channel.id}) in guild {after.guild} {id: {after.guild.id}} edited (url: {after.jump_url})")
 
     async def on_message_delete(self, message: discord.Message):
+        if message.author.id == self.user.id:
+            return
         self.logger.debug(f"message {message.content} (id: {message.id}) from member {message.author.name} (uid: {message.author.id}) in channel {message.channel.name} (id: {message.channel.id}) in guild {message.guild} (id: {message.guild.id}) deleted")
 
     async def on_bulk_message_delete(self, messages: List[discord.Message]):
         _first = messages[0]
         self.logger.debug(f"{len(messages)} {', '.join([message.content for message in messages])} in channel {_first.channel.name} (id: {_first.channel.id}) in guild {_first.guild.name} (id: {_first.guild.id}) bulk-deleted")
 
-    # called regardless of internal message cache state
-    async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):
-        self.logger.debug(f"message {payload.cached_message.content if payload.cached_message is not None else '[unresolved]'} (id: {payload.message_id}) in channel [unresolved] (id: {payload.channel_id}) in guild [unresolved] (id: {payload.guild_id}) edited")
+    # # called regardless of internal message cache state
+    # async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):
+    #     self.logger.debug(f"message {payload.cached_message.content if payload.cached_message is not None else '[unresolved]'} (id: {payload.message_id}) in channel [unresolved] (id: {payload.channel_id}) in guild [unresolved] (id: {payload.guild_id}) edited")
 
-    # called regardless of internal message cache state
-    async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent):
-        self.logger.debug(f"message {payload.cached_message.content if payload.cached_message is not None else '[unresolved]'} (id: {payload.message_id}) in channel [unresolved] (id: {payload.channel_id}) in guild [unresolved] (id: {payload.guild_id}) deleted")
+    # # called regardless of internal message cache state
+    # async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent):
+    #     self.logger.debug(f"message {payload.cached_message.content if payload.cached_message is not None else '[unresolved]'} (id: {payload.message_id}) in channel [unresolved] (id: {payload.channel_id}) in guild [unresolved] (id: {payload.guild_id}) deleted")
 
-    # called regardless of internal message cache state
-    async def on_raw_bulk_message_delete(self, payload: discord.RawBulkMessageDeleteEvent):
-        self.logger.debug(f"{len({payload.cached_messages})} messages in channel [unresolved] (id: {payload.channel_id}) in guild [unresolved] (id: {payload.guild_id}) bulk-deleted")
+    # # called regardless of internal message cache state
+    # async def on_raw_bulk_message_delete(self, payload: discord.RawBulkMessageDeleteEvent):
+    #     self.logger.debug(f"{len({payload.cached_messages})} messages in channel [unresolved] (id: {payload.channel_id}) in guild [unresolved] (id: {payload.guild_id}) bulk-deleted")
 
     # do not listen to reactions
 
@@ -220,10 +224,8 @@ class CustomClient(commands.Bot):
     # real stuff
     async def setup_hook(self):
         await self.populate_data()
-
         await self.load_extension("client.cogs")
         self.create_cogs_mapping()
-
         await self.sync_app_commands()
 
     def create_cogs_mapping(self):
