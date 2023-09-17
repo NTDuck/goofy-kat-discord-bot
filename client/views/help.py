@@ -1,5 +1,6 @@
 
 from typing import Iterable, List
+import random
 
 import discord
 from discord import app_commands
@@ -85,23 +86,35 @@ class HelpSelectMenu(discord.ui.Select["HelpViewPerCog"]):
     def __init__(self, client: discord.Client, **kwargs):
         super().__init__(**kwargs)
         self.client = client
-        self.placeholder = "select something pls"
+        self.placeholder = "select something, it'll be worth ur time i promise!"
         self.options = self.set_options()
 
     def set_options(self) -> Iterable[discord.SelectOption]:
         return [discord.SelectOption(label=cog.qualified_name.capitalize(), value=name, description=cog.description) for name, cog in self.client.cogs_ordered_mapping.items()]
+    
+    def set_placeholder(self, interaction_count: int):
+        """an unnecessary method to reset `placeholder` per `interaction`. should better be randomized."""
+        max_choice = len(self.options)
+        if not interaction_count > max_choice:
+            mythical = ["ambatukam", "burenyuu", "hello every nyan", "i am emu otori!", "wonderhoy!", "i wish i were a bird", "open na noor", "i am the one who knocks"]
+            placeholder = random.choice(mythical)
+        else:
+            reyeal = ["consider taking a break?", "umm, please stop...", "no easter egg here!", "you ain't done yet?", "be aware of the 1-minute mark..."]
+            placeholder = random.choice(reyeal)
+        self.placeholder = placeholder
 
     async def callback(self, interaction: discord.Interaction):
         view: HelpViewPerCog = self.view
         view.interaction = interaction
         cog: commands.Cog = interaction.client.get_cog(self.values[0])   # `self.values` has a `len` of 1
-        if not view.interacted:   # first interaction with selectmenu
+        if not view.interaction_count:   # not 0 == True. well...
             view.embed = HelpEmbedPerCog(cog=cog, client=interaction.client)
-            view.interacted = True
         else:
             view.embed.cog = cog
             view.edit_embed()
-        await interaction.response.edit_message(embed=view.embed, attachments=[])   # file should immediately be removed after first selectmenu interaction
+        view.interaction_count += 1
+        self.set_placeholder(interaction_count=view.interaction_count)
+        await interaction.response.edit_message(embed=view.embed, view=view, attachments=[])   # file should immediately be removed after first selectmenu interaction
 
 
 class HelpViewPerCog(discord.ui.View):
@@ -111,7 +124,7 @@ class HelpViewPerCog(discord.ui.View):
         self.interaction = interaction
         self.timeout = 60
         self.embed = HelpEmbedPlaceholder(client=interaction.client)
-        self.interacted = False
+        self.interaction_count = 0
 
         item = HelpSelectMenu(client=self.interaction.client)
         self.add_item(item)
