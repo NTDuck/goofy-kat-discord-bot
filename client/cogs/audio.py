@@ -10,7 +10,7 @@ from . import CustomCog
 from ..const.audio import PAUSED, PLAYING
 from ..const.command import SUCCESS
 from ..errors import *
-from ..utils.fetch import fetch_ytb_audio_info, rand_local_asset
+from ..utils.fetch import fetch_ytb_audio_info
 from ..utils.formatting import status_update_prefix as sup, b, c, url
 
 

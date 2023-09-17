@@ -21,9 +21,6 @@ class BotVoiceClientAlreadyPaused(app_commands.CheckFailure):
 class BotVoiceClientAlreadyPlaying(app_commands.CheckFailure):
     pass
 
-class BotVoiceClientIsolation(app_commands.CheckFailure):
-    pass
-
 class BotVoiceClientQueueEmpty(app_commands.CheckFailure):
     pass
 

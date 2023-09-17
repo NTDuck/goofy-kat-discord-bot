@@ -225,12 +225,21 @@ class CustomClient(commands.Bot):
     async def setup_hook(self):
         await self.populate_data()
         await self.load_extension("client.cogs")
+        # create mappings for convenience elsewhere
         self.create_cogs_mapping()
+        self.create_app_commands_mapping()
         await self.sync_app_commands()
 
     def create_cogs_mapping(self):
         """modify `self.cogs` into a `collections.OrderedDict` for help command purposes"""
-        self.cogs_ordered = OrderedDict(sorted(self.cogs.items(), key=lambda item: item[1].index))   # don't know how this works
+        self.cogs_ordered_mapping = OrderedDict(sorted(self.cogs.items(), key=lambda item: item[1].index))   # don't know how this works
+
+    def create_app_commands_mapping(self):
+        """similar to property `commands` but for app commands."""
+        self.app_commands_mapping: Mapping[str, app_commands.Command] = {}   # lowercase
+        for cog in self.cogs.values():
+            _name = lambda command: command.name if cog.app_command is None else f"{cog.qualified_name} {command.name}"
+            self.app_commands_mapping.update({_name(command): command for command in cog.walk_app_commands()})
 
     async def populate_data(self):
         default_state: GuildVoiceDataMapping = {
