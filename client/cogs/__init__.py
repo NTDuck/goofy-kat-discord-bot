@@ -15,12 +15,12 @@ logger = root.getChild(__name__)
 
 
 class CustomCog(commands.Cog):
-    """param `emoji`: the string representation of a discord emoji, for example :sob:"""
     def __init__(self, client: discord.Client, index: int, emoji: Optional[str] = None, **kwargs) -> None:
         super().__init__(**kwargs)
         self.client = client
         self.index = index   # for arranging cogs order in help command
-        self.emoji = emoji
+        self.emoji = emoji   # likely custom emoji taken from master server
+        # syntax for inline emojis: ":emoji_name:" for default emoji, "<:emoji_name:emoji_id>" for custom i.e. server-specific emoji
         self.logger = logger.getChild(self.__class__.__name__)
 
     @staticmethod

@@ -11,7 +11,7 @@ from ..utils.formatting import b, status_update_prefix as sup
 
 class MiscCog(CustomCog, name="miscellaneous"):
     def __init__(self, client: discord.Client):
-        super().__init__(client, index=0, emoji=":frog:")
+        super().__init__(client, index=0, emoji=":thinking:")
 
     @app_commands.command()
     async def ping(self, interaction: discord.Interaction):
@@ -25,11 +25,11 @@ class MiscCog(CustomCog, name="miscellaneous"):
         """see the full list of available commands."""
         if not command:
             view = HelpViewPerCog(interaction=interaction)
-            await interaction.response.send_message(view=view, embed=view.embed)
+            await interaction.response.send_message(view=view, file=view.embed.file, embed=view.embed)
             return
         _command = interaction.client.app_commands_mapping.get(command)
         if _command is None:
             await interaction.response.send_message(content=sup(f"command {b(command)} does not exist. try our provided options"))
             return
-        embed = HelpEmbedPerCommand(command=_command)
+        embed = HelpEmbedPerCommand(command=_command, client=interaction.client)
         await interaction.response.send_message(embed=embed)
