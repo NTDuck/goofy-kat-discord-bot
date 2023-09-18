@@ -21,9 +21,9 @@ class AudioData:   # pickle serializable
         self.webpage_url = webpage_url
 
 
-class AudioCog(CustomCog, name="music"):
-    def __init__(self, client: discord.Client):
-        super().__init__(client, index=2, emoji="<:wave_sound:1152922010108833894>")
+class AudioCog(CustomCog, name="music player"):
+    def __init__(self, client: discord.Client, **kwargs):
+        super().__init__(client, emoji="<a:audio:1153178622006411284>", **kwargs)
 
     async def _get(self, interaction: discord.Interaction) -> Mapping:
         return await interaction.client._get(id=interaction.guild_id)

@@ -4,14 +4,14 @@ from typing import Optional
 import discord
 from discord import app_commands
 
-from . import CustomCog
+from . import CustomCog, CustomGroupCog
 from ..views.help import HelpViewPerCog, HelpEmbedPerCommand, help_autocomplete
 from ..utils.formatting import b, status_update_prefix as sup
 
 
 class MiscCog(CustomCog, name="miscellaneous"):
     def __init__(self, client: discord.Client):
-        super().__init__(client, index=0, emoji=":thinking:")
+        super().__init__(client, emoji="<a:find:1153184607903162369>")
 
     @app_commands.command()
     async def ping(self, interaction: discord.Interaction):
@@ -33,3 +33,8 @@ class MiscCog(CustomCog, name="miscellaneous"):
             return
         embed = HelpEmbedPerCommand(command=_command, client=interaction.client)
         await interaction.response.send_message(embed=embed)
+
+
+class InfoCog(CustomGroupCog, name="info"):
+    def __init__(self, client: discord.Client, **kwargs):
+        super().__init__(client=client, emoji="<a:info:1153177790133325954>", **kwargs)

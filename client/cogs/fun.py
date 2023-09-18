@@ -15,9 +15,9 @@ from ..views.choice import MikuView
 from ..views.tictactoe import TicTacToeView
 
 
-class FunCog(CustomCog, name="images"):
-    def __init__(self, client: discord.Client):
-        super().__init__(client, index=1, emoji="<:sparkle:1152922200559599657>")
+class FunCog(CustomCog, name="behold, joy!"):
+    def __init__(self, client: discord.Client, **kwargs):
+        super().__init__(client, emoji="<a:catpaw:1153181023450972221>", **kwargs)
 
     @app_commands.command()
     @app_commands.checks.cooldown(rate=1, per=2.0, key=lambda i: (i.guild_id, i.user.id))

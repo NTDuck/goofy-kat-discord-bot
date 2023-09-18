@@ -12,8 +12,8 @@ from ..utils.formatting import status_update_prefix as sup, c
 
 
 class EncodeCog(CustomGroupCog, name="encode"):
-    def __init__(self, client: discord.Client):
-        super().__init__(client, index=4, emoji="<:encrypt:1152922275776057445>")
+    def __init__(self, client: discord.Client, **kwargs):
+        super().__init__(client, emoji="<a:lock:1153177510356451348>", **kwargs)
 
     @app_commands.command()
     @app_commands.describe(str="anything really")
@@ -62,8 +62,8 @@ class EncodeCog(CustomGroupCog, name="encode"):
 
 
 class DecodeCog(CustomGroupCog, name="decode"):
-    def __init__(self, client: discord.Client):
-        super().__init__(client, index=5, emoji="<:decrypt:1152922641431269426>")
+    def __init__(self, client: discord.Client, **kwargs):
+        super().__init__(client, emoji="<a:unlock:1153177082113818694>", **kwargs)
 
     @app_commands.command()
     @app_commands.describe(str="anything really")
@@ -114,9 +114,14 @@ class DecodeCog(CustomGroupCog, name="decode"):
         await interaction.response.send_message(content=f"{c(dec_str)}")
 
 
+class ExecCog(CustomGroupCog, name="exec"):
+    def __init__(self, client: discord.Client, **kwargs):
+        super().__init__(client, emoji="<a:code:1153182080470089809>", **kwargs)
+
+
 class UtilityCog(CustomCog, name="utilities"):
-    def __init__(self, client: discord.Client):
-        super().__init__(client, index=3, emoji="<:box:1152923020134981682>")
+    def __init__(self, client: discord.Client, **kwargs):
+        super().__init__(client, emoji="<a:cog:1153182523879346287>", **kwargs)
 
     # should require near-administrative privileges
     @app_commands.command()

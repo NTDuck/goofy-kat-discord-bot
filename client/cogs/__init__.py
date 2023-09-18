@@ -15,10 +15,18 @@ logger = root.getChild(__name__)
 
 
 class CustomCog(commands.Cog):
-    def __init__(self, client: discord.Client, index: int, emoji: Optional[str] = None, **kwargs) -> None:
+    """
+    \nemoji inline/string repr: `:name:` (default), `<:name:id:>` (custom), `<a:name:id>` (animated custom)
+    \nemoji ids could be retrieved using something like this:
+    ```
+    @app_commands.command()
+    async def retrieve_emoji(self, interaction: discord.Interaction):
+        await interaction.response.send_message(", ".join([f"{emoji.name}: {emoji.id}" for emoji in interaction.guild.emojis]))
+    ```
+    """
+    def __init__(self, client: discord.Client, emoji: Optional[str] = None, **kwargs) -> None:
         super().__init__(**kwargs)
         self.client = client
-        self.index = index   # for arranging cogs order in help command
         self.emoji = emoji   # likely custom emoji taken from master server
         # syntax for inline emojis: ":emoji_name:" for default emoji, "<:emoji_name:emoji_id>" for custom i.e. server-specific emoji
         self.logger = logger.getChild(self.__class__.__name__)
@@ -73,23 +81,23 @@ class CustomCog(commands.Cog):
 
     
 class CustomGroupCog(commands.GroupCog):
-    def __init__(self, client: discord.Client, index: int, emoji: Optional[str] = None, **kwargs) -> None:
+    def __init__(self, client: discord.Client, emoji: Optional[str] = None, **kwargs) -> None:
         super().__init__(**kwargs)
         self.client = client
-        self.index = index
         self.emoji = emoji
         self.logger = logger.getChild(self.__class__.__name__)
 
 
 from .audio import AudioCog
 from .fun import FunCog
-from .misc import MiscCog
-from .utils import DecodeCog, EncodeCog, UtilityCog
+from .misc import MiscCog, InfoCog
+from .utils import DecodeCog, EncodeCog, ExecCog, UtilityCog
 
 
 async def setup(client: discord.Client):   # register as ext
-    cogs = {AudioCog, DecodeCog, EncodeCog, FunCog, MiscCog, UtilityCog}
-    for cog in cogs:
+    cogs = (MiscCog, InfoCog, FunCog, AudioCog, EncodeCog, DecodeCog, ExecCog, UtilityCog)
+    for ind, cog in enumerate(cogs):
+        cog.index = ind   # for help command
         await client.add_cog(cog(client))
     client.logger.info(f"set up {len(cogs)} cogs: {', '.join([cog.__name__ for cog in cogs])}")
     # warning: logger name is app.client.cogs instead of app.cogs
