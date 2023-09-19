@@ -62,6 +62,7 @@ class Config:   # requires populating/"loading" environment variables before imp
     }
 
     MAX_CLEAR_LIMIT = 100
+    MAX_AUDIO_QUEUE_LIMIT = 50
 
     COMMAND_PREFIX = "$"
     GAME_NAME = "goofy cats"

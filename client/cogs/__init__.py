@@ -90,7 +90,8 @@ class CustomGroupCog(commands.GroupCog):
 
 from .audio import AudioCog
 from .fun import FunCog
-from .misc import MiscCog, InfoCog
+from .info import InfoCog
+from .misc import MiscCog
 from .utils import DecodeCog, EncodeCog, ExecCog, UtilityCog
 
 

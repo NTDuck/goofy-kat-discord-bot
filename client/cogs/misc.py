@@ -4,7 +4,7 @@ from typing import Optional
 import discord
 from discord import app_commands
 
-from . import CustomCog, CustomGroupCog
+from . import CustomCog
 from ..views.help import HelpViewPerCog, HelpEmbedPerCommand, help_autocomplete
 from ..utils.formatting import b, status_update_prefix as sup
 
@@ -33,8 +33,3 @@ class MiscCog(CustomCog, name="miscellaneous"):
             return
         embed = HelpEmbedPerCommand(command=_command, client=interaction.client)
         await interaction.response.send_message(embed=embed)
-
-
-class InfoCog(CustomGroupCog, name="info"):
-    def __init__(self, client: discord.Client, **kwargs):
-        super().__init__(client=client, emoji="<a:info:1153177790133325954>", **kwargs)

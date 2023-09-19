@@ -3,7 +3,6 @@ from collections import OrderedDict
 from collections.abc import Mapping
 from typing import Any, List, Optional, Union
 import datetime
-import pickle
 
 from aiohttp import ClientSession
 from discord import app_commands
@@ -12,9 +11,9 @@ from redis.asyncio import Redis
 import discord
 
 from logger import logger, queue_listener
-from .annotations import GuildDataMapping, GuildVoiceDataMapping
 from .const.audio import PAUSED
-from .utils.formatting import diff
+from .utils.audio import sset, qclear
+from .utils.formatting import diff, voice_state_key_fmt as sk
 
 
 class CustomClient(commands.Bot):
@@ -23,15 +22,6 @@ class CustomClient(commands.Bot):
         self.config = config
         self.redis_cli = redis_cli
         self.logger = logger
-
-    # minimal redis read-write
-    async def _get(self, id: int) -> GuildDataMapping:
-        raw = await self.redis_cli.get(id)
-        return pickle.loads(raw)
-
-    async def _post(self, id: int, value: GuildDataMapping) -> None:
-        raw = pickle.dumps(value)
-        await self.redis_cli.set(id, raw)
     
     # event monitoring
     # required intents: guilds, messages, members
@@ -242,20 +232,13 @@ class CustomClient(commands.Bot):
             self.app_commands_mapping.update({_name(command): command for command in cog.walk_app_commands()})
 
     async def populate_data(self):
-        default_state: GuildVoiceDataMapping = {
-            "voice": {
-                "state": PAUSED,
-                "queue": [],   # list[client.cogs.audio.AudioData]
-            }
-        }
-        data = pickle.dumps(default_state)   # pickle serialization is done once & populate all guilds
-        
         counter = 0
         guilds: list[discord.Guild] = []
         async for guild in self.fetch_guilds():
             counter += 1
             guilds.append(guild)
-            await self.redis_cli.set(guild.id, data)
+            await sset(self.redis_cli, id=guild.id, value=PAUSED)   # set state
+            await qclear(self.redis_cli, id=guild.id)   # empty queue
         self.logger.info(f"connected to {counter} guilds: {', '.join([f'{guild.name} (id: {guild.id})' for guild in guilds])}")
 
     async def sync_app_commands(self):

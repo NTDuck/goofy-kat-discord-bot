@@ -1,6 +1,5 @@
 
 import asyncio
-from collections.abc import Mapping
 from typing import Callable
 
 import discord
@@ -10,35 +9,15 @@ from . import CustomCog
 from ..const.audio import PAUSED, PLAYING
 from ..const.command import SUCCESS
 from ..errors import *
+from ..utils.audio import siget, siset, qiclear, qiappend, qipop, qigetone, qiindexall, qiindexone, qilen, name
 from ..utils.fetch import fetch_ytb_audio_info
 from ..utils.formatting import status_update_prefix as sup, b, c, url
-
-
-class AudioData:   # pickle serializable
-    def __init__(self, src_url: str, name: str, webpage_url: str):
-        self.src_url = src_url
-        self.name = name
-        self.webpage_url = webpage_url
 
 
 class AudioCog(CustomCog, name="music player"):
     def __init__(self, client: discord.Client, **kwargs):
         super().__init__(client, emoji="<a:audio:1153178622006411284>", **kwargs)
-
-    async def _get(self, interaction: discord.Interaction) -> Mapping:
-        return await interaction.client._get(id=interaction.guild_id)
-    
-    async def _post(self, interaction: discord.Interaction, value: Mapping) -> None:
-        await interaction.client._post(id=interaction.guild_id, value=value)
-
-    async def reset_queue(self, interaction: discord.Interaction) -> None:
-        default_state = {
-            "voice": {
-                "state": PAUSED,
-                "queue": [],
-            }
-        }
-        await self._post(interaction, default_state)
+        self.qlim: int = client.config["MAX_AUDIO_QUEUE_LIMIT"]
 
     def get_bot_voice_client(self, interaction: discord.Interaction) -> discord.VoiceClient:
         return interaction.client.get_guild(interaction.guild_id).voice_client
@@ -59,7 +38,7 @@ class AudioCog(CustomCog, name="music player"):
             raise BotVoiceClientAlreadyConnected
 
         # empty queue upon join
-        await self.reset_queue(interaction)
+        await qiclear(interaction)
 
         await interaction.user.voice.channel.connect()
         await interaction.edit_original_response(content=sup(f"bot {c(interaction.client.user.name)} connected to voice channel {c(interaction.user.voice.channel.name)}", state=SUCCESS))
@@ -72,7 +51,7 @@ class AudioCog(CustomCog, name="music player"):
         await self.notify(interaction)
 
         # empty queue upon leave
-        await self.reset_queue(interaction)
+        await qiclear(interaction)
         
         voice_client = self.get_bot_voice_client(interaction)
         if voice_client is None:
@@ -83,30 +62,22 @@ class AudioCog(CustomCog, name="music player"):
         await interaction.edit_original_response(content=sup(f"bot {c(interaction.client.user.name)} disconnected from voice channel {c(voice_client.channel.name)}", state=SUCCESS))
 
     async def play_next(self, interaction: discord.Interaction, after_func: Callable):
-        data = await self._get(interaction)
-        state, queue = data["voice"]["state"], data["voice"]["queue"]
+        state = await siget(interaction)
+        _len = await qilen(interaction)
+        print("bofa", state, " ", _len)
 
         if state == PLAYING:
-            queue.pop(0)
-        if len(queue) < 1:
-            print("fall into this")
+            await qipop(interaction)   # pop
+        if _len < 1:   # check if queue is empty
             await interaction.channel.send(content=f"queue exhausted. bot {c(interaction.client.user.name)} stopped playing.")
             await self.reset_queue(interaction)
             return
-        audio: AudioData = queue[0]
-        src_url = audio.src_url
+        src_url, name, webpage_url = await qiindexall(interaction, index=0)   # retrieve first element
         src = discord.FFmpegPCMAudio(src_url, options="-vn")
         self.get_bot_voice_client(interaction).play(discord.PCMVolumeTransformer(src), after=after_func)
-        if state == PLAYING:
-            data["voice"].update({
-                "queue": queue,
-            })
-        else:
-            data["voice"].update({
-                "state": PLAYING,
-            })
-        await self._post(interaction, data)
-        await interaction.channel.send(content=sup(f"bot {c(interaction.client.user.name)} is playing {audio.name} {url(c('(╯°□°)╯︵ ┻━┻'), audio.webpage_url)}", state=SUCCESS))
+        if state == PAUSED:
+            await siset(interaction, PLAYING)
+        await interaction.channel.send(content=sup(f"bot {c(interaction.client.user.name)} is playing {name} {url(c('(╯°□°)╯︵ ┻━┻'), webpage_url)}", state=SUCCESS))
 
     @app_commands.command()
     @app_commands.describe(keyword="simply what you would type into YouTube's search bar.")
@@ -126,8 +97,11 @@ class AudioCog(CustomCog, name="music player"):
         if self.get_bot_voice_client(interaction) is None:
             raise VoiceClientNotFound
         
-        data = await self._get(interaction)
-        state, queue = data["voice"]["state"], data["voice"]["queue"]
+        state = await siget(interaction)
+        _len = await qilen(interaction)
+        if _len > self.qlim:   # will need to look back on this
+            await interaction.edit_original_response(content=sup(f"failed to add new audio - queue limit exceeded"))
+            return
         
         vid_info = fetch_ytb_audio_info(config=interaction.client.config, keyword=keyword)
         if not vid_info["entries"]:
@@ -138,15 +112,12 @@ class AudioCog(CustomCog, name="music player"):
         vid_name = res["title"]
         vid_webpage_url = res["webpage_url"]
 
-        queue.append(AudioData(vid_url, vid_name, vid_webpage_url))
-        data["voice"].update({
-            "queue": queue,
-        })
-        await self._post(interaction, data)
+        await qiappend(interaction, (vid_url, vid_name, vid_webpage_url))
 
         await interaction.edit_original_response(content=sup(f"bot {interaction.client.user.name} added {b(vid_name)} to queue", state=SUCCESS))
 
         if state == PAUSED:
+            print("begin pn")
             await self.play_next(interaction, after_func=after)
 
     @app_commands.command()
@@ -155,21 +126,18 @@ class AudioCog(CustomCog, name="music player"):
         """pauses the current queue."""
         await self.notify(interaction)
         
-        data = await self._get(interaction)
-        state, queue = data["voice"]["state"], data["voice"]["queue"]
+        state = await siget(interaction)
+        _len = await qilen(interaction)
         voice_client = self.get_bot_voice_client(interaction)
         if voice_client is None:
             raise BotVoiceClientNotFound
-        if not queue:
+        if _len <= 0:
             raise BotVoiceClientQueueEmpty
         if state == PAUSED:
             raise BotVoiceClientAlreadyPaused
         
         voice_client.pause()
-        data["voice"].update({
-            "state": PAUSED,
-        })
-        await self._post(interaction, data)
+        await siset(interaction, PAUSED)
 
         await interaction.edit_original_response(content=sup(f"bot {c(interaction.client.user.name)} paused in voice channel {c(voice_client.channel.name)}", state=SUCCESS))
 
@@ -179,21 +147,18 @@ class AudioCog(CustomCog, name="music player"):
         """resumes the current queue."""
         await self.notify(interaction)
 
-        data = await self._get(interaction)
-        state, queue = data["voice"]["state"], data["voice"]["queue"]
+        state = await siget(interaction)
+        _len = await qilen(interaction)
         voice_client = self.get_bot_voice_client(interaction)
         if voice_client is None:
             raise BotVoiceClientNotFound
-        if not queue:
+        if _len <= 0:
             raise BotVoiceClientQueueEmpty
         if state == PLAYING:
             raise BotVoiceClientAlreadyPlaying
         
         voice_client.resume()
-        data["voice"].update({
-            "state": PLAYING,
-        })
-        await self._post(interaction, data)
+        await siset(interaction, PLAYING)
 
         await interaction.edit_original_response(content=sup(f"bot {c(interaction.client.user.name)} resumed in voice channel {c(voice_client.channel.name)}", state=SUCCESS))
 
@@ -219,13 +184,14 @@ class AudioCog(CustomCog, name="music player"):
         if self.get_bot_voice_client(interaction) is None:
             raise BotVoiceClientNotFound
         
-        data = await self._get(interaction)
-        queue = data["voice"]["queue"]
-        if not queue:
+        nameq = await qigetone(interaction, "name")
+        if not nameq:
             raise BotVoiceClientQueueEmpty
         
-        msg = f"\n".join([f"currently playing: {b(queue[0].name)}"] + [f"{ind}. {elem.name}" for ind, elem in enumerate(queue[1:])])
-        await interaction.edit_original_response(content=msg)
+        l = [f"currently playing: {b(nameq[0])}"]
+        if len(nameq) > 0:
+            l.extend([f"{ind}. {_name}" for ind, _name in enumerate(nameq[1:])])
+        await interaction.edit_original_response(content=f"\n".join(l))
 
     @app_commands.command()
     @app_commands.checks.cooldown(rate=1, per=1.0, key=lambda i: (i.guild_id, i.user.id))
@@ -236,13 +202,12 @@ class AudioCog(CustomCog, name="music player"):
         if self.get_bot_voice_client(interaction) is None:
             raise BotVoiceClientNotFound
 
-        data = await self._get(interaction)
-        queue = data["voice"]["queue"]
-        if not queue:
+        first = await qiindexone(interaction, name, 0)
+        if not first:   # first only exists if queue does
             raise BotVoiceClientQueueEmpty
         
         self.get_bot_voice_client(interaction).stop()
-        await interaction.edit_original_response(content=sup(f"bot {c(interaction.client.user.name)} skipped {b(queue[0].name)}", state=SUCCESS))
+        await interaction.edit_original_response(content=sup(f"bot {c(interaction.client.user.name)} skipped {b(first)}", state=SUCCESS))
 
     @app_commands.command()
     @app_commands.checks.cooldown(rate=1, per=3.0, key=lambda i: (i.guild_id, i.user.id))
@@ -253,15 +218,9 @@ class AudioCog(CustomCog, name="music player"):
         if self.get_bot_voice_client(interaction) is None:
             raise BotVoiceClientNotFound
         
-        await self.reset_queue(interaction)
+        await qiclear(interaction)
         self.get_bot_voice_client(interaction).stop()
         await interaction.edit_original_response(content=sup(f"bot {c(interaction.client.user.name)}'s queue is cleared", state=SUCCESS))
-
-    # async def cog_before_invoke(self, ctx: Context):
-    #     if ctx.bot.intents.voice_states:
-    #         return
-    #     await ctx.send(err_lack_perm(ctx.bot.user.name, "voice_states"))
-    #     raise Exception   # implement a real exception class
 
 
 """
