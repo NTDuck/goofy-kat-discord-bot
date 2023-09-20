@@ -6,6 +6,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from . import EmbedMeta
 from ..utils.formatting import b, c, i
 from ..utils.fetch import local_asset
 
@@ -16,33 +17,17 @@ async def help_autocomplete(interaction: discord.Interaction, current: str) -> L
     return [app_commands.Choice(name=choice, value=choice) for choice in choices if current.lower() in choice]
 
 
-class HelpEmbedMeta(discord.Embed):
-    transparent = "<:transparent:1152925713704439890>"
+class HelpEmbedMeta(EmbedMeta):
     def __init__(self, client: discord.Client, **kwargs):
-        super().__init__(**kwargs)
-        self.client = client
-        self.colour = discord.Colour.gold()   #f1c40f
-        self.set_author()
-
-        self.__fields__ = self.create_fields()
-        self.set_fields()
+        super().__init__(client, fields=self.create_fields(), msg="help", **kwargs)
 
     def create_fields(self) -> List[str]:
         """remember to manually change the value of property `__fields__`. dev is too lazy to bother using `@property`."""
         pass   # defined by children classes
-
-    def set_fields(self):
-        """to register changes, call method `create_fields()` immediately prior."""
-        for field in self.__fields__:
-            self.add_field(name="", value=field, inline=False)
-
-    def set_author(self):
-        return super().set_author(name=self.client.user.name.lower() + "-help!", icon_url=self.client.user.avatar.url)   # assume that the hyphen is used as a separator. a more generic approach could be implemented instead however dev is too unmotivated
     
     def edit(self):
         self.clear_fields()
-        self.__fields__ = self.create_fields()
-        self.set_fields()
+        self.set_fields(self.create_fields())
 
 
 class HelpEmbedPerCog(HelpEmbedMeta):

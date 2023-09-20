@@ -13,12 +13,13 @@ import discord
 from logger import logger, queue_listener
 from .const.audio import PAUSED
 from .utils.audio import sset, qclear
-from .utils.formatting import diff, voice_state_key_fmt as sk
+from .utils.formatting import diff
 
 
 class CustomClient(commands.Bot):
     def __init__(self, config: Mapping[str, Any], redis_cli: Redis, **kwargs) -> None:
-        super().__init__(**kwargs)
+        description = "a goofy silly discord bot (offer cat images)"
+        super().__init__(description=description, **kwargs)
         self.config = config
         self.redis_cli = redis_cli
         self.logger = logger

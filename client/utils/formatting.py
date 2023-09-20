@@ -142,3 +142,6 @@ def diff(_d: Mapping[str, Mapping[str, Union[str, Callable[..., str]]]], before:
 voice_state_key_fmt = lambda gid: f"guild:{gid}:voice:state"
 voice_queue_key_fmt = lambda gid: f"guild:{gid}:voice:queue"
 voice_queue_attr_key_fmt = lambda gid, attr: f"{voice_queue_key_fmt(gid)}:{attr}"
+
+# info embeds field formatting
+field_fmt = lambda title, content: f"{b(title)}: {content}"

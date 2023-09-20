@@ -35,7 +35,6 @@ class MediaCog(CustomCog, name="media"):
         src = random.choice(list(cfg))
 
         _callables = callables(CatApiHandler)
-        print(_callables)
         
         url, filename = await _callables[f"_{src}"](interaction, cfg[src])
 
