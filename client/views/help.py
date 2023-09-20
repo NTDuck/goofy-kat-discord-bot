@@ -1,5 +1,5 @@
 
-from typing import Iterable, List
+from typing import Iterable, List, Union
 import random
 
 import discord
@@ -21,7 +21,7 @@ class HelpEmbedMeta(discord.Embed):
     def __init__(self, client: discord.Client, **kwargs):
         super().__init__(**kwargs)
         self.client = client
-        self.colour = discord.Colour.gold()
+        self.colour = discord.Colour.gold()   #f1c40f
         self.set_author()
 
         self.__fields__ = self.create_fields()
@@ -38,7 +38,12 @@ class HelpEmbedMeta(discord.Embed):
 
     def set_author(self):
         return super().set_author(name=self.client.user.name.lower() + "-help!", icon_url=self.client.user.avatar.url)   # assume that the hyphen is used as a separator. a more generic approach could be implemented instead however dev is too unmotivated
-        
+    
+    def edit(self):
+        self.clear_fields()
+        self.__fields__ = self.create_fields()
+        self.set_fields()
+
 
 class HelpEmbedPerCog(HelpEmbedMeta):
     def __init__(self, cog: commands.Cog, client: discord.Client, **kwargs):
@@ -46,7 +51,7 @@ class HelpEmbedPerCog(HelpEmbedMeta):
         super().__init__(client=client, **kwargs)
 
     def create_fields(self) -> List[str]:
-        fields = [f"{self.cog.emoji} {b(self.cog.qualified_name.capitalize())}:"]
+        fields = [f"{self.cog.emoji} {b(self.cog.qualified_name.lower())}: {self.cog.description}"]
         fields.extend([f"{self.transparent}{b('/' + command.name)}: {command.description}" for command in self.cog.walk_app_commands()])   # bot only use app commands
         return fields
 
@@ -66,8 +71,8 @@ class HelpEmbedPerCommand(HelpEmbedMeta):
 
 class HelpEmbedPlaceholder(HelpEmbedMeta):
     """uses local image for author icon, therefore requires sending image as a `discord.File("path-to-image.png")` before manually calling `set_author()` (after instantiation)"""
-    img_name = "anakin.png"
-    img_path = local_asset("images", filename=img_name)
+    img_name = "konatarayeal.jpg"
+    img_path = local_asset("images", "banners", filename=img_name)
     def __init__(self, client: discord.Client, **kwargs):
         self.file = discord.File(self.img_path, filename=self.img_name)
         self.description = f"welcum to {client.user.name.lower()}!"
@@ -81,6 +86,25 @@ class HelpEmbedPlaceholder(HelpEmbedMeta):
         return super().set_image(url="attachment://" + self.img_name)
 
 
+class HelpButtonMeta(discord.ui.Button):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    async def callback(self, interaction: discord.Interaction):
+        view: discord.ui.View
+        view.interaction = interaction
+
+
+class HelpButtonInvite(HelpButtonMeta):
+    def __init__(self, **kwargs):
+        super().__init__(style=discord.ButtonStyle.link, label="add me to ur server!", url="https://discord.com/api/oauth2/authorize?client_id=1132630021140402209&permissions=42870253809600&scope=applications.commands%20bot", **kwargs)
+
+
+class HelpButtonVote(HelpButtonMeta):
+    def __init__(self, **kwargs):
+        super().__init__(style=discord.ButtonStyle.link, label="vote 4 me pls", url="https://youtu.be/dQw4w9WgXcQ", **kwargs)   # yeah that's rickroll
+
+
 class HelpSelectMenu(discord.ui.Select["HelpViewPerCog"]):
     """required: call method `set_options()` after instantiation with proper `interaction` param."""
     def __init__(self, client: discord.Client, **kwargs):
@@ -90,7 +114,7 @@ class HelpSelectMenu(discord.ui.Select["HelpViewPerCog"]):
         self.options = self.set_options()
 
     def set_options(self) -> Iterable[discord.SelectOption]:
-        return [discord.SelectOption(label=cog.qualified_name.capitalize(), value=name, description=cog.description) for name, cog in self.client.cogs_ordered_mapping.items()]
+        return [discord.SelectOption(label=name.lower(), value=name) for name in self.client.cogs_ordered_mapping.keys()]
     
     def set_placeholder(self, interaction_count: int):
         """an unnecessary method to reset `placeholder` per `interaction`. should better be randomized."""
@@ -111,34 +135,53 @@ class HelpSelectMenu(discord.ui.Select["HelpViewPerCog"]):
             view.embed = HelpEmbedPerCog(cog=cog, client=interaction.client)
         else:
             view.embed.cog = cog
-            view.edit_embed()
+            view.embed.edit()
         view.interaction_count += 1
         self.set_placeholder(interaction_count=view.interaction_count)
         await interaction.response.edit_message(embed=view.embed, view=view, attachments=[])   # file should immediately be removed after first selectmenu interaction
 
 
-class HelpViewPerCog(discord.ui.View):
-    children: Iterable[HelpSelectMenu]
-    def __init__(self, interaction: discord.Interaction, **kwargs):
-        super().__init__(**kwargs)
+class HelpViewMeta(discord.ui.View):
+    children: Iterable[discord.ui.Item]
+    def __init__(self, interaction: discord.Interaction):
+        super().__init__(timeout=60)
         self.interaction = interaction
-        self.timeout = 60
-        self.embed = HelpEmbedPlaceholder(client=interaction.client)
-        self.interaction_count = 0
 
-        item = HelpSelectMenu(client=self.interaction.client)
-        self.add_item(item)
+        items = [HelpButtonInvite(), HelpButtonVote()]
+        for item in items:
+            self.add_item(item)
 
-    async def on_timeout(self) -> None:
-        """update last interaction for on_timeout children disabling"""
+    def disable_items(self):
         for item in self.children:
             item.disabled = True
+
+    async def on_timeout(self):
+        """update last interaction for on_timeout children disabling"""
+        self.disable_items()
         self.stop()
         await self.interaction.edit_original_response(view=self)   # could add a timeout embed
-            
-    def edit_embed(self):
-        """modify `self.embed`"""
-        embed = self.embed
-        embed.clear_fields()
-        embed.__fields__ = embed.create_fields()
-        embed.set_fields()
+
+
+class HelpViewPerCog(HelpViewMeta):
+    children: Iterable[Union[HelpSelectMenu, HelpButtonMeta]]
+    def __init__(self, interaction: discord.Interaction, **kwargs):
+        super().__init__(interaction, **kwargs)
+        self.interaction_count = 0
+        self.embed = HelpEmbedPlaceholder(self.interaction.client)
+
+        item = HelpSelectMenu(self.interaction.client)
+        self.add_item(item)
+
+    def disable_items(self):
+        for item in self.children:
+            item.disabled = True
+            if item.type != discord.ComponentType.select:
+                continue
+            item.placeholder = "time's out, please go away"
+
+
+class HelpViewPerCommand(HelpViewMeta):
+    children: Iterable[HelpButtonMeta]
+    def __init__(self, interaction: discord.Interaction, command: Union[app_commands.Command, commands.Command], **kwargs):
+        super().__init__(interaction, **kwargs)
+        self.embed = HelpEmbedPerCommand(command, interaction.client)

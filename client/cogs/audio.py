@@ -14,9 +14,11 @@ from ..utils.fetch import fetch_ytb_audio_info
 from ..utils.formatting import status_update_prefix as sup, b, c, url
 
 
-class AudioCog(CustomCog, name="music player"):
+class AudioCog(CustomCog, name="audio"):
+    """a music player typically seen in discord bots. warning: prone to bugs."""
+    kaomoji = "(╯°□°)╯︵ ┻━┻"
     def __init__(self, client: discord.Client, **kwargs):
-        super().__init__(client, emoji="<a:audio:1153178622006411284>", **kwargs)
+        super().__init__(client, emoji="<:audio_wave:1153626821548593202>", **kwargs)
         self.qlim: int = client.config["MAX_AUDIO_QUEUE_LIMIT"]
 
     def get_bot_voice_client(self, interaction: discord.Interaction) -> discord.VoiceClient:
@@ -27,7 +29,7 @@ class AudioCog(CustomCog, name="music player"):
     @app_commands.checks.bot_has_permissions(connect=True)
     async def join(self, interaction: discord.Interaction):
         """joins a voice/stage channel."""
-        await self.notify(interaction)
+        await interaction.response.defer()
 
         voice_state = interaction.user.voice
         if voice_state is None:
@@ -41,14 +43,14 @@ class AudioCog(CustomCog, name="music player"):
         await qiclear(interaction)
 
         await interaction.user.voice.channel.connect()
-        await interaction.edit_original_response(content=sup(f"bot {c(interaction.client.user.name)} connected to voice channel {c(interaction.user.voice.channel.name)}", state=SUCCESS))
+        await interaction.followup.send(sup(f"bot {c(interaction.client.user.name)} connected to voice channel {c(interaction.user.voice.channel.name)}", state=SUCCESS))
 
     @app_commands.command()
     @app_commands.checks.has_permissions(move_members=True)
     @app_commands.checks.cooldown(rate=1, per=1.0, key=lambda i: (i.guild_id, i.user.id))
     async def leave(self, interaction: discord.Interaction):
         """leaves the current voice/stage channel."""
-        await self.notify(interaction)
+        await interaction.response.defer()
 
         # empty queue upon leave
         await qiclear(interaction)
@@ -59,25 +61,25 @@ class AudioCog(CustomCog, name="music player"):
                 
         await voice_client.disconnect()
         # ctx.voice_client.cleanup()
-        await interaction.edit_original_response(content=sup(f"bot {c(interaction.client.user.name)} disconnected from voice channel {c(voice_client.channel.name)}", state=SUCCESS))
+        await interaction.followup.send(sup(f"bot {c(interaction.client.user.name)} disconnected from voice channel {c(voice_client.channel.name)}", state=SUCCESS))
 
     async def play_next(self, interaction: discord.Interaction, after_func: Callable):
         state = await siget(interaction)
         _len = await qilen(interaction)
-        print("bofa", state, " ", _len)
 
         if state == PLAYING:
             await qipop(interaction)   # pop
         if _len < 1:   # check if queue is empty
             await interaction.channel.send(content=f"queue exhausted. bot {c(interaction.client.user.name)} stopped playing.")
-            await self.reset_queue(interaction)
+            await qiclear(interaction)
             return
+        
         src_url, name, webpage_url = await qiindexall(interaction, index=0)   # retrieve first element
         src = discord.FFmpegPCMAudio(src_url, options="-vn")
         self.get_bot_voice_client(interaction).play(discord.PCMVolumeTransformer(src), after=after_func)
         if state == PAUSED:
             await siset(interaction, PLAYING)
-        await interaction.channel.send(content=sup(f"bot {c(interaction.client.user.name)} is playing {name} {url(c('(╯°□°)╯︵ ┻━┻'), webpage_url)}", state=SUCCESS))
+        await interaction.channel.send(sup(f"bot {c(interaction.client.user.name)} is playing {name} {url(c(self.kaomoji), webpage_url)}", state=SUCCESS))
 
     @app_commands.command()
     @app_commands.describe(keyword="simply what you would type into YouTube's search bar.")
@@ -92,7 +94,7 @@ class AudioCog(CustomCog, name="music player"):
             future = asyncio.run_coroutine_threadsafe(coro, interaction.client.loop)
             future.result()   # must be called to get result from future
         
-        await self.notify(interaction)
+        await interaction.response.defer()
 
         if self.get_bot_voice_client(interaction) is None:
             raise VoiceClientNotFound
@@ -100,7 +102,7 @@ class AudioCog(CustomCog, name="music player"):
         state = await siget(interaction)
         _len = await qilen(interaction)
         if _len > self.qlim:   # will need to look back on this
-            await interaction.edit_original_response(content=sup(f"failed to add new audio - queue limit exceeded"))
+            await interaction.followup.send(sup(f"failed to add new audio - queue limit exceeded"))
             return
         
         vid_info = fetch_ytb_audio_info(config=interaction.client.config, keyword=keyword)
@@ -114,17 +116,16 @@ class AudioCog(CustomCog, name="music player"):
 
         await qiappend(interaction, (vid_url, vid_name, vid_webpage_url))
 
-        await interaction.edit_original_response(content=sup(f"bot {interaction.client.user.name} added {b(vid_name)} to queue", state=SUCCESS))
+        await interaction.followup.send(sup(f"bot {interaction.client.user.name} added {b(vid_name)} to queue", state=SUCCESS))
 
         if state == PAUSED:
-            print("begin pn")
             await self.play_next(interaction, after_func=after)
 
     @app_commands.command()
     @app_commands.checks.cooldown(rate=1, per=1.0, key=lambda i: (i.guild_id, i.user.id))
     async def pause(self, interaction: discord.Interaction):
         """pauses the current queue."""
-        await self.notify(interaction)
+        await interaction.response.defer()
         
         state = await siget(interaction)
         _len = await qilen(interaction)
@@ -139,13 +140,13 @@ class AudioCog(CustomCog, name="music player"):
         voice_client.pause()
         await siset(interaction, PAUSED)
 
-        await interaction.edit_original_response(content=sup(f"bot {c(interaction.client.user.name)} paused in voice channel {c(voice_client.channel.name)}", state=SUCCESS))
+        await interaction.followup.send(sup(f"bot {c(interaction.client.user.name)} paused in voice channel {c(voice_client.channel.name)}", state=SUCCESS))
 
     @app_commands.command()
     @app_commands.checks.cooldown(rate=1, per=1.0, key=lambda i: (i.guild_id, i.user.id))
     async def resume(self, interaction: discord.Interaction):
         """resumes the current queue."""
-        await self.notify(interaction)
+        await interaction.response.defer()
 
         state = await siget(interaction)
         _len = await qilen(interaction)
@@ -160,44 +161,44 @@ class AudioCog(CustomCog, name="music player"):
         voice_client.resume()
         await siset(interaction, PLAYING)
 
-        await interaction.edit_original_response(content=sup(f"bot {c(interaction.client.user.name)} resumed in voice channel {c(voice_client.channel.name)}", state=SUCCESS))
+        await interaction.followup.send(sup(f"bot {c(interaction.client.user.name)} resumed in voice channel {c(voice_client.channel.name)}", state=SUCCESS))
 
     @app_commands.command()
     @app_commands.describe(value="new volume value to set.")
     @app_commands.checks.cooldown(rate=1, per=1.0, key=lambda i: (i.guild_id, i.user.id))
     async def volume(self, interaction: discord.Interaction, value: app_commands.Range[int, 0, 100]):
         """change the volume. works separately with the interactable slider."""
-        await self.notify(interaction)
+        await interaction.response.defer()
 
         if self.get_bot_voice_client(interaction) is None:
             raise BotVoiceClientNotFound
 
         self.get_bot_voice_client(interaction).source.volume = value / 100
-        await interaction.edit_original_response(content=sup(f"bot {c(interaction.client.user.name)}'s volume changed to {c(value.__str__() + '%')}", state=SUCCESS))
+        await interaction.followup.send(sup(f"bot {c(interaction.client.user.name)}'s volume changed to {c(value.__str__() + '%')}", state=SUCCESS))
 
     @app_commands.command()
     @app_commands.checks.cooldown(rate=1, per=1.0, key=lambda i: (i.guild_id, i.user.id))
     async def queue(self, interaction: discord.Interaction):
         """view all audios in the current queue."""
-        await self.notify(interaction)
+        await interaction.response.defer()
 
         if self.get_bot_voice_client(interaction) is None:
             raise BotVoiceClientNotFound
         
-        nameq = await qigetone(interaction, "name")
+        nameq = await qigetone(interaction, name)
         if not nameq:
             raise BotVoiceClientQueueEmpty
         
-        l = [f"currently playing: {b(nameq[0])}"]
+        qrepr = [f"currently playing: {b(nameq[0])}"]
         if len(nameq) > 0:
-            l.extend([f"{ind}. {_name}" for ind, _name in enumerate(nameq[1:])])
-        await interaction.edit_original_response(content=f"\n".join(l))
+            qrepr.extend([f"{ind}. {_name}" for ind, _name in enumerate(nameq[1:])])
+        await interaction.followup.send(f"\n".join(qrepr))
 
     @app_commands.command()
     @app_commands.checks.cooldown(rate=1, per=1.0, key=lambda i: (i.guild_id, i.user.id))
     async def skip(self, interaction: discord.Interaction):
         """skips to next audio in the queue."""
-        await self.notify(interaction)
+        await interaction.response.defer()
     
         if self.get_bot_voice_client(interaction) is None:
             raise BotVoiceClientNotFound
@@ -207,20 +208,20 @@ class AudioCog(CustomCog, name="music player"):
             raise BotVoiceClientQueueEmpty
         
         self.get_bot_voice_client(interaction).stop()
-        await interaction.edit_original_response(content=sup(f"bot {c(interaction.client.user.name)} skipped {b(first)}", state=SUCCESS))
+        await interaction.followup.send(sup(f"bot {c(interaction.client.user.name)} skipped {b(first)}", state=SUCCESS))
 
     @app_commands.command()
     @app_commands.checks.cooldown(rate=1, per=3.0, key=lambda i: (i.guild_id, i.user.id))
     async def clear(self, interaction: discord.Interaction):
         """empties the current queue."""
-        await self.notify(interaction)
+        await interaction.response.defer()
 
         if self.get_bot_voice_client(interaction) is None:
             raise BotVoiceClientNotFound
         
         await qiclear(interaction)
         self.get_bot_voice_client(interaction).stop()
-        await interaction.edit_original_response(content=sup(f"bot {c(interaction.client.user.name)}'s queue is cleared", state=SUCCESS))
+        await interaction.followup.send(sup(f"bot {c(interaction.client.user.name)}'s queue is cleared", state=SUCCESS))
 
 
 """

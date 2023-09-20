@@ -12,8 +12,9 @@ from ..utils.formatting import status_update_prefix as sup, c
 
 
 class EncodeCog(CustomGroupCog, name="encode"):
+    """converts readable text into gibberish."""
     def __init__(self, client: discord.Client, **kwargs):
-        super().__init__(client, emoji="<a:lock:1153177510356451348>", **kwargs)
+        super().__init__(client, emoji="<:lock:1153627852474941450>", **kwargs)
 
     @app_commands.command()
     @app_commands.describe(str="anything really")
@@ -62,8 +63,9 @@ class EncodeCog(CustomGroupCog, name="encode"):
 
 
 class DecodeCog(CustomGroupCog, name="decode"):
+    """converts gibberish back into readable text. or not."""
     def __init__(self, client: discord.Client, **kwargs):
-        super().__init__(client, emoji="<a:unlock:1153177082113818694>", **kwargs)
+        super().__init__(client, emoji="<:unlock:1153628736378392576>", **kwargs)
 
     @app_commands.command()
     @app_commands.describe(str="anything really")
@@ -115,13 +117,15 @@ class DecodeCog(CustomGroupCog, name="decode"):
 
 
 class ExecCog(CustomGroupCog, name="exec"):
+    """executes a block of code. experimental."""
     def __init__(self, client: discord.Client, **kwargs):
-        super().__init__(client, emoji="<a:code:1153182080470089809>", **kwargs)
+        super().__init__(client, emoji="<:terminal:1153692013603070052>", **kwargs)
 
 
 class UtilityCog(CustomCog, name="utilities"):
+    """small helper commands that don't really fit anywhere else."""
     def __init__(self, client: discord.Client, **kwargs):
-        super().__init__(client, emoji="<a:cog:1153182523879346287>", **kwargs)
+        super().__init__(client, emoji="<:layers:1153692590126932098>", **kwargs)
 
     # should require near-administrative privileges
     @app_commands.command()
@@ -131,13 +135,13 @@ class UtilityCog(CustomCog, name="utilities"):
     @app_commands.checks.has_permissions(manage_messages=True)
     async def cls(self, interaction: discord.Interaction, number: app_commands.Range[int, 1, 100]):
         """clear up to 100 messages within current text channel."""
-        await self.notify(interaction)
+        await interaction.response.defer()
         
         resp = await interaction.original_response()
         limit = number + 1
         
         await interaction.channel.purge(limit=limit, check=lambda msg: msg.id != resp.id, bulk=True)
 
-        await interaction.edit_original_response(content=sup(f"deleted up to {c(number.__str__())} messages in channel {c(interaction.channel.name)}", state=SUCCESS))
+        await interaction.followup.send(sup(f"deleted up to {c(number.__str__())} messages in channel {c(interaction.channel.name)}", state=SUCCESS))
         await asyncio.sleep(2)
         await interaction.delete_original_response()

@@ -27,19 +27,14 @@ class CustomCog(commands.Cog):
     def __init__(self, client: discord.Client, emoji: Optional[str] = None, **kwargs) -> None:
         super().__init__(**kwargs)
         self.client = client
-        self.emoji = emoji   # likely custom emoji taken from master server
-        # syntax for inline emojis: ":emoji_name:" for default emoji, "<:emoji_name:emoji_id>" for custom i.e. server-specific emoji
+        self.emoji = emoji
         self.logger = logger.getChild(self.__class__.__name__)
-
-    @staticmethod
-    async def notify(interaction: discord.Interaction):
-        await interaction.response.send_message(content=sup(f"command processing, please wait a few seconds {c('(╯°□°)╯︵ ┻━┻')}", state=PENDING))
 
     async def cog_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         # avoid full evaluation & if else
         # but still looks pathetic anw
         # children functions take up exactly 1 argument
-        def _CheckFailure(interaction: discord.Interaction) -> str:
+        def _CheckFailure(interaction: discord.Interaction) -> str:   # default
             return sup("an unknown exception occurred")
         def _Unauthorized(interaction: discord.Interaction) -> str:
             return sup("You don't have the right O you don't have the right")
@@ -72,12 +67,15 @@ class CustomCog(commands.Cog):
         key = f"_{error.__class__.__name__}"
         if key not in locals():
             msg = sup(f"an unknown exception occurred: {c(error.__class__.__name__)}")
-        msg = locals()[key](interaction)
+        msg = locals().get(key, _CheckFailure)(interaction)
         resp = await interaction.original_response()
-        if resp is None:
-            await interaction.response.send_message(content=msg)
-            return
-        await interaction.edit_original_response(content=msg)
+        try:   # will change in future commits
+            if resp is None:
+                await interaction.response.send_message(msg)
+                return
+            await interaction.edit_original_response(msg)
+        except:
+            await interaction.followup.send(msg)
 
     
 class CustomGroupCog(commands.GroupCog):
@@ -89,14 +87,13 @@ class CustomGroupCog(commands.GroupCog):
 
 
 from .audio import AudioCog
-from .fun import FunCog
-from .info import InfoCog
-from .misc import MiscCog
+from .essentials import MediaCog, CasualGamesCog
+from .misc import MiscCog, InfoCog
 from .utils import DecodeCog, EncodeCog, ExecCog, UtilityCog
 
 
 async def setup(client: discord.Client):   # register as ext
-    cogs = (MiscCog, InfoCog, FunCog, AudioCog, EncodeCog, DecodeCog, ExecCog, UtilityCog)
+    cogs = (MiscCog, InfoCog, MediaCog, CasualGamesCog, AudioCog, EncodeCog, DecodeCog, ExecCog, UtilityCog)
     for ind, cog in enumerate(cogs):
         cog.index = ind   # for help command
         await client.add_cog(cog(client))
