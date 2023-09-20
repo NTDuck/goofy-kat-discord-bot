@@ -16,13 +16,10 @@ from ..utils.formatting import status_update_prefix as sup, b, c, url
 
 class AudioCog(CustomCog, name="audio"):
     """a music player typically seen in discord bots. warning: prone to bugs."""
-    kaomoji = "(╯°□°)╯︵ ┻━┻"
+    tableflip = "(╯°□°)╯︵ ┻━┻"
     def __init__(self, client: discord.Client, **kwargs):
         super().__init__(client, emoji="<:audio_wave:1153626821548593202>", **kwargs)
         self.qlim: int = client.config["MAX_AUDIO_QUEUE_LIMIT"]
-
-    def get_bot_voice_client(self, interaction: discord.Interaction) -> discord.VoiceClient:
-        return interaction.client.get_guild(interaction.guild_id).voice_client
 
     @app_commands.command()
     @app_commands.checks.cooldown(rate=1, per=1.0, key=lambda i: (i.guild_id, i.user.id))
@@ -35,7 +32,7 @@ class AudioCog(CustomCog, name="audio"):
         if voice_state is None:
             raise VoiceClientNotFound
         
-        voice_client = self.get_bot_voice_client(interaction)
+        voice_client = interaction.client.get_bot_voice_client(interaction)
         if voice_client is not None:
             raise BotVoiceClientAlreadyConnected
 
@@ -55,7 +52,7 @@ class AudioCog(CustomCog, name="audio"):
         # empty queue upon leave
         await qiclear(interaction)
         
-        voice_client = self.get_bot_voice_client(interaction)
+        voice_client = interaction.client.get_bot_voice_client(interaction)
         if voice_client is None:
             raise BotVoiceClientNotFound
                 
@@ -76,10 +73,10 @@ class AudioCog(CustomCog, name="audio"):
         
         src_url, name, webpage_url = await qiindexall(interaction, index=0)   # retrieve first element
         src = discord.FFmpegPCMAudio(src_url, options="-vn")
-        self.get_bot_voice_client(interaction).play(discord.PCMVolumeTransformer(src), after=after_func)
+        interaction.client.get_bot_voice_client(interaction).play(discord.PCMVolumeTransformer(src), after=after_func)
         if state == PAUSED:
             await siset(interaction, PLAYING)
-        await interaction.channel.send(sup(f"bot {c(interaction.client.user.name)} is playing {name} {url(c(self.kaomoji), webpage_url)}", state=SUCCESS))
+        await interaction.channel.send(sup(f"bot {c(interaction.client.user.name)} is playing {name} {url(c(self.tableflip), webpage_url)}", state=SUCCESS))
 
     @app_commands.command()
     @app_commands.describe(keyword="simply what you would type into YouTube's search bar.")
@@ -96,7 +93,7 @@ class AudioCog(CustomCog, name="audio"):
         
         await interaction.response.defer()
 
-        if self.get_bot_voice_client(interaction) is None:
+        if interaction.client.get_bot_voice_client(interaction) is None:
             raise VoiceClientNotFound
         
         state = await siget(interaction)
@@ -129,7 +126,7 @@ class AudioCog(CustomCog, name="audio"):
         
         state = await siget(interaction)
         _len = await qilen(interaction)
-        voice_client = self.get_bot_voice_client(interaction)
+        voice_client = interaction.client.get_bot_voice_client(interaction)
         if voice_client is None:
             raise BotVoiceClientNotFound
         if _len <= 0:
@@ -150,7 +147,7 @@ class AudioCog(CustomCog, name="audio"):
 
         state = await siget(interaction)
         _len = await qilen(interaction)
-        voice_client = self.get_bot_voice_client(interaction)
+        voice_client = interaction.client.get_bot_voice_client(interaction)
         if voice_client is None:
             raise BotVoiceClientNotFound
         if _len <= 0:
@@ -170,10 +167,10 @@ class AudioCog(CustomCog, name="audio"):
         """change the volume. works separately with the interactable slider."""
         await interaction.response.defer()
 
-        if self.get_bot_voice_client(interaction) is None:
+        if interaction.client.get_bot_voice_client(interaction) is None:
             raise BotVoiceClientNotFound
 
-        self.get_bot_voice_client(interaction).source.volume = value / 100
+        interaction.client.get_bot_voice_client(interaction).source.volume = value / 100
         await interaction.followup.send(sup(f"bot {c(interaction.client.user.name)}'s volume changed to {c(value.__str__() + '%')}", state=SUCCESS))
 
     @app_commands.command()
@@ -182,7 +179,7 @@ class AudioCog(CustomCog, name="audio"):
         """view all audios in the current queue."""
         await interaction.response.defer()
 
-        if self.get_bot_voice_client(interaction) is None:
+        if interaction.client.get_bot_voice_client(interaction) is None:
             raise BotVoiceClientNotFound
         
         nameq = await qigetone(interaction, name)
@@ -200,14 +197,14 @@ class AudioCog(CustomCog, name="audio"):
         """skips to next audio in the queue."""
         await interaction.response.defer()
     
-        if self.get_bot_voice_client(interaction) is None:
+        if interaction.client.get_bot_voice_client(interaction) is None:
             raise BotVoiceClientNotFound
 
         first = await qiindexone(interaction, name, 0)
         if not first:   # first only exists if queue does
             raise BotVoiceClientQueueEmpty
         
-        self.get_bot_voice_client(interaction).stop()
+        interaction.client.get_bot_voice_client(interaction).stop()
         await interaction.followup.send(sup(f"bot {c(interaction.client.user.name)} skipped {b(first)}", state=SUCCESS))
 
     @app_commands.command()
@@ -216,11 +213,11 @@ class AudioCog(CustomCog, name="audio"):
         """empties the current queue."""
         await interaction.response.defer()
 
-        if self.get_bot_voice_client(interaction) is None:
+        if interaction.client.get_bot_voice_client(interaction) is None:
             raise BotVoiceClientNotFound
         
         await qiclear(interaction)
-        self.get_bot_voice_client(interaction).stop()
+        interaction.client.get_bot_voice_client(interaction).stop()
         await interaction.followup.send(sup(f"bot {c(interaction.client.user.name)}'s queue is cleared", state=SUCCESS))
 
 

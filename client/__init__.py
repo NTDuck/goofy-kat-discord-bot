@@ -23,6 +23,9 @@ class CustomClient(commands.Bot):
         self.config = config
         self.redis_cli = redis_cli
         self.logger = logger
+
+    def get_bot_voice_client(self, interaction: discord.Interaction) -> discord.VoiceClient:
+        return self.get_guild(interaction.guild_id).voice_client
     
     # event monitoring
     # required intents: guilds, messages, members

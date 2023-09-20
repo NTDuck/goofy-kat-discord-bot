@@ -8,7 +8,7 @@ logger = root.getChild(__name__)
 
 
 """
-also handles embed
+also handles embed & modals
 """
 
 class EmbedMeta(discord.Embed):

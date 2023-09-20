@@ -72,3 +72,14 @@ class CasualGamesCog(CustomCog, name="games"):
         """play a game you can't lose. unless you're really dumb."""
         await interaction.response.defer()
         await interaction.followup.send("play a game of tic-tac-toe.", view=TicTacToeView(user=interaction.user, size=(size, size), interaction=interaction))
+
+
+class EquilibriumCog(CustomCog, name=""):
+    """countless stories untold - about the author."""
+    def __init__(self, client: discord.Client, **kwargs):
+        super().__init__(client, emoji="<:shatter:1154051133824843809>", **kwargs)
+
+    @app_commands.command()
+    async def listen(self, interaction: discord.Interaction):
+        """listen to a random story."""
+        await interaction.response.send_message("i wish i were a bird")

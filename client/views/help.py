@@ -37,7 +37,8 @@ class HelpEmbedPerCog(HelpEmbedMeta):
 
     def create_fields(self) -> List[str]:
         fields = [f"{self.cog.emoji} {b(self.cog.qualified_name.lower())}: {self.cog.description}"]
-        fields.extend([f"{self.transparent}{b('/' + command.name)}: {command.description}" for command in self.cog.walk_app_commands()])   # bot only use app commands
+        groupname = self.cog.app_command.qualified_name + " " if self.cog.app_command is not None else ""
+        fields.extend([f"{self.transparent}{b('/' + groupname + command.name)}: {command.description}" for command in self.cog.walk_app_commands()])   # app commands first
         return fields
 
 
@@ -49,8 +50,7 @@ class HelpEmbedPerCommand(HelpEmbedMeta):
     def create_fields(self) -> List[str]:
         name = f"/{self.command.parent.name + ' ' if self.command.parent is not None else ''}{self.command.name}"
         fields = [f"{b(name)}: {self.command.description}"]
-        for param in self.command.parameters:
-            fields.extend([f"{self.transparent}{c(param.name)}{' ' + i('(required)') if param.required else ''}: {param.description}"])
+        fields.extend([f"{self.transparent}{c(param.name)}{' ' + i('(required)') if param.required else ''}: {param.description}" for param in self.command.parameters])
         return fields
     
 

@@ -55,5 +55,3 @@ def callables(cls) -> Iterable[Callable]:
         not k.startswith("__"),
         not k.endswith("__")
     ])}
-
-print("done")

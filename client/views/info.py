@@ -3,7 +3,7 @@ from typing import Iterable
 import discord
 
 from . import EmbedMeta
-from ..utils.formatting import field_fmt as fmt
+from ..utils.formatting import b, field_fmt as fmt
 
 
 class InfoEmbedMeta(EmbedMeta):
@@ -37,15 +37,15 @@ class InfoEmbedStatus(InfoEmbedMeta):
 
     def create_fields(self) -> Iterable[str]:
         fields = [
-            fmt("status", "?"),
+            fmt("status", "up and running"),
             fmt("joined (utc)", self.client.user.created_at.strftime(self.dtfmt)),
-            fmt("guilds connected", "?"),
-            fmt("messages sent", "?"),
-            fmt("intents", "?"),
+            fmt("guilds connected", len(self.client.guilds)),
+            fmt("messages sent", "a lot really"),
+            # fmt("intents", "?"),
             fmt("is_public", "yep, bot can be invited by anyone" if self.client.application.bot_public else "nein, bot is locked to owner"),
             fmt("require_code_grant", "yes, bot requires full oauth2 code grant flow to join" if self.client.application.bot_require_code_grant else "not at all"),
             fmt("websocket latency", self.client.latency),
-            fmt("verification", "?"),
+            fmt("verification", " nah"),
             fmt("k/d/a", "0/17/5"),
         ]
         return fields
@@ -73,5 +73,16 @@ class InfoEmbedOwner(InfoEmbedMeta):
             fmt("username", owner.name),
             fmt("uid", owner.id),
             fmt("joined (utc)", owner.created_at.strftime(self.dtfmt)),
+            f"wanna know more? there's a {b('special place')} for it.",
         ]
+        return fields
+    
+
+class InfoEmbedEmojis(InfoEmbedMeta):
+    def __init__(self, interaction: discord.Interaction, **kwargs):
+        self.interaction = interaction
+        super().__init__(interaction.client, **kwargs)
+
+    def create_fields(self) -> Iterable[str]:
+        fields = [fmt(f"<:{emoji.name}:{emoji.id}>", f"{emoji.name} ({emoji.id})") for emoji in self.interaction.guild.emojis]
         return fields

@@ -4,6 +4,7 @@ import asyncio
 
 import discord
 from discord import app_commands
+from discord.ext import commands
 
 from . import CustomCog, CustomGroupCog
 from ..const.command import SUCCESS
@@ -117,9 +118,14 @@ class DecodeCog(CustomGroupCog, name="decode"):
 
 
 class ExecCog(CustomGroupCog, name="exec"):
-    """executes a block of code. experimental."""
+    """executes a block of code. experimental. no external imports unfortunately."""
     def __init__(self, client: discord.Client, **kwargs):
         super().__init__(client, emoji="<:terminal:1153692013603070052>", **kwargs)
+
+    @commands.command()
+    async def py(self, interaction: discord.Interaction):
+        """behold, python! everybody loves it, right?"""
+        await interaction.response.defer()
 
 
 class UtilityCog(CustomCog, name="utilities"):

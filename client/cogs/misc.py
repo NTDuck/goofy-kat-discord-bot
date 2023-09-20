@@ -6,7 +6,7 @@ from discord import app_commands
 
 from . import CustomCog, CustomGroupCog
 from ..views.help import HelpViewPerCog, HelpViewPerCommand, help_autocomplete
-from ..views.info import InfoEmbedGeneral, InfoEmbedStatus, InfoEmbedMisc, InfoEmbedOwner
+from ..views.info import InfoEmbedGeneral, InfoEmbedStatus, InfoEmbedMisc, InfoEmbedOwner, InfoEmbedEmojis
 from ..utils.formatting import b, status_update_prefix as sup
 
 
@@ -81,10 +81,17 @@ class InfoCog(CustomGroupCog, name="info"):
         await interaction.followup.send(embed=embed)
 
     @app_commands.command()
-    async def owner(self, interaction: discord.Interaction):
-        """meet the owner!"""
+    async def author(self, interaction: discord.Interaction):
+        """meet the author!"""
         await interaction.response.defer()
         embed = InfoEmbedOwner(interaction.client)
+        await interaction.followup.send(embed=embed)
+
+    @app_commands.command()
+    async def emojis(self, interaction: discord.Interaction):
+        """retrieve all custom emojis in the current guild."""
+        await interaction.response.defer()
+        embed = InfoEmbedEmojis(interaction)
         await interaction.followup.send(embed=embed)
 
 
