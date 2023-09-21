@@ -74,7 +74,7 @@ class HelpEmbedPlaceholder(HelpEmbedMeta):
 
 class HelpButtonMeta(discord.ui.Button):
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(row=4, **kwargs)   # placed last
 
     async def callback(self, interaction: discord.Interaction):
         view: discord.ui.View

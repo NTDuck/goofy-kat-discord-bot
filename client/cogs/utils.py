@@ -9,8 +9,7 @@ from . import CustomCog, CustomGroupCog
 from ..const.command import SUCCESS
 from ..utils.cryptography import atbash, caesar, caesar_rev, base64, base64_rev, a1z26, a1z26_rev, morse, morse_rev
 from ..utils.formatting import status_update_prefix as sup, c
-from ..utils.exec.python import processor as pypr
-from ..views.exec import ExecModalMeta
+from ..views.exec import ExecModalPython
 
 
 class EncodeCog(CustomGroupCog, name="encode"):
@@ -126,7 +125,7 @@ class ExecCog(CustomGroupCog, name="exec"):
     @app_commands.command()
     async def py(self, interaction: discord.Interaction):
         """behold, python! everybody loves it, right?"""
-        modal = ExecModalMeta(interaction.client, "python", pypr)
+        modal = ExecModalPython(interaction.client)
         await interaction.response.send_modal(modal)   # involves modal therefore cannot be deferred
 
 
