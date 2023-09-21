@@ -19,9 +19,10 @@ async def help_autocomplete(interaction: discord.Interaction, current: str) -> L
 
 class HelpEmbedMeta(EmbedMeta):
     def __init__(self, client: discord.Client, **kwargs):
-        super().__init__(client, fields=self.create_fields(), msg="help", **kwargs)
+        super().__init__(client, msg="help", **kwargs)
+        self.set_fields(self.create_fields())
 
-    def create_fields(self) -> List[str]:
+    def create_fields(self) -> Iterable[str]:
         """remember to manually change the value of property `__fields__`. dev is too lazy to bother using `@property`."""
         pass   # defined by children classes
     
@@ -33,9 +34,9 @@ class HelpEmbedMeta(EmbedMeta):
 class HelpEmbedPerCog(HelpEmbedMeta):
     def __init__(self, cog: commands.Cog, client: discord.Client, **kwargs):
         self.cog = cog
-        super().__init__(client=client, **kwargs)
+        super().__init__(client, **kwargs)
 
-    def create_fields(self) -> List[str]:
+    def create_fields(self) -> Iterable[str]:
         fields = [f"{self.cog.emoji} {b(self.cog.qualified_name.lower())}: {self.cog.description}"]
         groupname = self.cog.app_command.qualified_name + " " if self.cog.app_command is not None else ""
         fields.extend([f"{self.transparent}{b('/' + groupname + command.name)}: {command.description}" for command in self.cog.walk_app_commands()])   # app commands first
@@ -44,10 +45,10 @@ class HelpEmbedPerCog(HelpEmbedMeta):
 
 class HelpEmbedPerCommand(HelpEmbedMeta):
     def __init__(self, command: app_commands.Command, client: discord.Client, **kwargs):
-        self.command = command
-        super().__init__(client=client, **kwargs)
+        self.command = command   # must be placed at this exact position else embed fails
+        super().__init__(client, **kwargs)
 
-    def create_fields(self) -> List[str]:
+    def create_fields(self) -> Iterable[str]:
         name = f"/{self.command.parent.name + ' ' if self.command.parent is not None else ''}{self.command.name}"
         fields = [f"{b(name)}: {self.command.description}"]
         fields.extend([f"{self.transparent}{c(param.name)}{' ' + i('(required)') if param.required else ''}: {param.description}" for param in self.command.parameters])
@@ -59,12 +60,12 @@ class HelpEmbedPlaceholder(HelpEmbedMeta):
     img_name = "konatarayeal.jpg"
     img_path = local_asset("images", "banners", filename=img_name)
     def __init__(self, client: discord.Client, **kwargs):
+        super().__init__(client, **kwargs)
         self.file = discord.File(self.img_path, filename=self.img_name)
-        self.description = f"welcum to {client.user.name.lower()}!"
+        self.description = f"welcum to {self.client.user.name.lower()}!"
         self.set_image()
-        super().__init__(client=client, **kwargs)
 
-    def create_fields(self) -> List[str]:
+    def create_fields(self) -> Iterable[str]:
         return [f"check out our signature {b('/cat')}!"]
     
     def set_image(self):
@@ -99,7 +100,7 @@ class HelpSelectMenu(discord.ui.Select["HelpViewPerCog"]):
         self.options = self.set_options()
 
     def set_options(self) -> Iterable[discord.SelectOption]:
-        return [discord.SelectOption(label=name.lower(), value=name) for name in self.client.cogs_ordered_mapping.keys()]
+        return [discord.SelectOption(label=name, value=name) for name in self.client.cogs_ordered_mapping.keys()]
     
     def set_placeholder(self, interaction_count: int):
         """an unnecessary method to reset `placeholder` per `interaction`. should better be randomized."""
@@ -149,8 +150,8 @@ class HelpViewMeta(discord.ui.View):
 
 class HelpViewPerCog(HelpViewMeta):
     children: Iterable[Union[HelpSelectMenu, HelpButtonMeta]]
-    def __init__(self, interaction: discord.Interaction, **kwargs):
-        super().__init__(interaction, **kwargs)
+    def __init__(self, interaction: discord.Interaction):
+        super().__init__(interaction)
         self.interaction_count = 0
         self.embed = HelpEmbedPlaceholder(self.interaction.client)
 
@@ -167,6 +168,6 @@ class HelpViewPerCog(HelpViewMeta):
 
 class HelpViewPerCommand(HelpViewMeta):
     children: Iterable[HelpButtonMeta]
-    def __init__(self, interaction: discord.Interaction, command: Union[app_commands.Command, commands.Command], **kwargs):
-        super().__init__(interaction, **kwargs)
+    def __init__(self, interaction: discord.Interaction, command: Union[app_commands.Command, commands.Command]):
+        super().__init__(interaction)
         self.embed = HelpEmbedPerCommand(command, interaction.client)

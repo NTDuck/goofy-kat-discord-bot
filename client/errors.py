@@ -55,7 +55,8 @@ class KeywordNotFound(AppCommandErrorMeta):
 ChildrenCounter.children.remove(AppCommandErrorMeta)   # remove metaclass since never called
     
     
-async def errorhandler(interaction: discord.Interaction, error: app_commands.AppCommandError, logger: logging.Logger):  
+async def errorhandler(interaction: discord.Interaction, error: app_commands.AppCommandError, logger: logging.Logger):
+    """tip: when debugging, delete a random line. for example, `content`."""
     logger.error(f"exception {error.__class__.__name__} raised from command /{interaction.command.name} by {interaction.user.name} (uid: {interaction.user.id}) (id: {interaction.id})")
     
     # warning: this implementation leaves MissingPermissions, BotMissingPermissions, CommandOnCooldown unhandled

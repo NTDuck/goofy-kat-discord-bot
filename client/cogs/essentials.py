@@ -74,7 +74,7 @@ class CasualGamesCog(CustomCog, name="games"):
         await interaction.followup.send("play a game of tic-tac-toe.", view=TicTacToeView(user=interaction.user, size=(size, size), interaction=interaction))
 
 
-class EquilibriumCog(CustomCog, name=""):
+class EquilibriumCog(CustomCog, name="stories untold"):
     """countless stories untold - about the author."""
     def __init__(self, client: discord.Client, **kwargs):
         super().__init__(client, emoji="<:shatter:1154051133824843809>", **kwargs)

@@ -4,12 +4,13 @@ import asyncio
 
 import discord
 from discord import app_commands
-from discord.ext import commands
 
 from . import CustomCog, CustomGroupCog
 from ..const.command import SUCCESS
 from ..utils.cryptography import atbash, caesar, caesar_rev, base64, base64_rev, a1z26, a1z26_rev, morse, morse_rev
 from ..utils.formatting import status_update_prefix as sup, c
+from ..utils.exec.python import processor as pypr
+from ..views.exec import ExecModalMeta
 
 
 class EncodeCog(CustomGroupCog, name="encode"):
@@ -122,10 +123,11 @@ class ExecCog(CustomGroupCog, name="exec"):
     def __init__(self, client: discord.Client, **kwargs):
         super().__init__(client, emoji="<:terminal:1153692013603070052>", **kwargs)
 
-    @commands.command()
+    @app_commands.command()
     async def py(self, interaction: discord.Interaction):
         """behold, python! everybody loves it, right?"""
-        await interaction.response.defer()
+        modal = ExecModalMeta(interaction.client, "python", pypr)
+        await interaction.response.send_modal(modal)   # involves modal therefore cannot be deferred
 
 
 class UtilityCog(CustomCog, name="utilities"):

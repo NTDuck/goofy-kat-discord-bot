@@ -27,7 +27,7 @@ class MiscCog(CustomCog, name="miscellaneous"):
         """see the full list of available commands."""
         await interaction.response.defer()   # last resort - process takes up too much time
         if not command:
-            view = HelpViewPerCog(interaction=interaction)
+            view = HelpViewPerCog(interaction)
             await interaction.followup.send(file=view.embed.file, embed=view.embed, view=view)
             return
         _command = interaction.client.app_commands_mapping.get(command)
